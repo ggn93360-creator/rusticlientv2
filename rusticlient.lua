@@ -1,4 +1,4 @@
--- rusticlientv2 - Ultimate Edition with all bypasses
+-- rusticlientv2 - Mobile Optimized Version
 -- Автор: SWILL / rusticlientv2
 
 repeat task.wait() until game:IsLoaded()
@@ -10,32 +10,14 @@ local executorInfo = {identifyexecutor and identifyexecutor() or 'Unknown'}
 local executorName = executorInfo[1] or 'Unknown'
 local executorVersion = executorInfo[2] or 'Unknown'
 
+-- Определение устройства
+local isMobile = UserInputService.TouchEnabled
+local isPhone = isMobile and (UserInputService.MaximumTouchCount >= 3)
+
 -- Обходы для разных инжекторов
 if executorName == 'Argon' or executorName == 'Wave' then
     getgenv().setthreadidentity = nil
     getgenv().getexecutorname = function() return 'Unknown' end
-end
-
-if executorName == 'Krnl' then
-    -- Krnl обходы
-    local oldNamecall
-    oldNamecall = hookmetamethod(game, '__namecall', function(...)
-        local method = getnamecallmethod()
-        if method == 'HttpGet' and select(1, ...):find('7GrandDadPGN') then
-            return readfile('rusticlientv2/profiles/commit.txt')
-        end
-        return oldNamecall(...)
-    end)
-end
-
-if executorName == 'Synapse' then
-    -- Synapse обходы
-    syn.crypt.encrypt = syn.crypt.encrypt or function() end
-end
-
-if executorName == 'ScriptWare' then
-    -- ScriptWare обходы
-    getgenv().http_request = http_request or request
 end
 
 -- ==================== ГЛОБАЛЬНЫЕ ФУНКЦИИ ====================
@@ -50,7 +32,6 @@ local loadstring = function(...)
 end
 
 local queue_on_teleport = queue_on_teleport or function() end
-
 local isfile = isfile or function(file)
     local suc, res = pcall(function()
         return readfile(file)
@@ -72,12 +53,18 @@ local tweenService = cloneref(game:GetService('TweenService'))
 
 -- ==================== GUI ====================
 
+for _, v in ipairs(coreGui:GetChildren()) do
+    if v.Name == 'rusticlientv2' then
+        v:Destroy()
+    end
+end
+
 local gui = Instance.new('ScreenGui')
 gui.Name = 'rusticlientv2'
 gui.ResetOnSpawn = false
 gui.Parent = coreGui
 
--- ==================== КНОПКА С АВАТАРКОЙ ====================
+-- ==================== КНОПКА С АВАТАРКОЙ (ДЛЯ ТЕЛЕФОНА) ====================
 
 local menuButton = Instance.new('ImageButton')
 menuButton.Size = UDim2.new(0, 70, 0, 70)
@@ -85,22 +72,44 @@ menuButton.Position = UDim2.new(0, 15, 0.5, -35)
 menuButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 menuButton.BackgroundTransparency = 0
 menuButton.Image = 'rbxassetid://90064663091843'
+menuButton.Visible = isMobile
 menuButton.Parent = gui
 
 local menuButtonCorner = Instance.new('UICorner')
 menuButtonCorner.CornerRadius = UDim.new(1, 0)
 menuButtonCorner.Parent = menuButton
 
-local menuButtonStroke = Instance.new('UIStroke')
-menuButtonStroke.Color = Color3.fromRGB(255, 50, 50)
-menuButtonStroke.Thickness = 2
-menuButtonStroke.Parent = menuButton
+-- ==================== КРУЖОК ДЛЯ ТЕЛЕФОНА ====================
+
+local mobileCircle = Instance.new('Frame')
+mobileCircle.Size = UDim2.new(0, 100, 0, 100)
+mobileCircle.Position = UDim2.new(0.5, -50, 0.5, -50)
+mobileCircle.BackgroundTransparency = 1
+mobileCircle.BorderColor3 = Color3.fromRGB(255, 50, 50)
+mobileCircle.BorderSizePixel = 3
+mobileCircle.Visible = isMobile
+mobileCircle.Parent = gui
+
+local mobileCircleCorner = Instance.new('UICorner')
+mobileCircleCorner.CornerRadius = UDim.new(1, 0)
+mobileCircleCorner.Parent = mobileCircle
+
+local mobileDot = Instance.new('Frame')
+mobileDot.Size = UDim2.new(0, 10, 0, 10)
+mobileDot.Position = UDim2.new(0.5, -5, 0.5, -5)
+mobileDot.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+mobileDot.BorderSizePixel = 0
+mobileDot.Parent = mobileCircle
+
+local mobileDotCorner = Instance.new('UICorner')
+mobileDotCorner.CornerRadius = UDim.new(1, 0)
+mobileDotCorner.Parent = mobileDot
 
 -- ==================== МЕНЮ ====================
 
 local menu = Instance.new('Frame')
-menu.Size = UDim2.new(0, 600, 0, 500)
-menu.Position = UDim2.new(0.5, -300, 0.5, -250)
+menu.Size = isMobile and UDim2.new(0, 350, 0, 500) or UDim2.new(0, 600, 0, 500)
+menu.Position = isMobile and UDim2.new(0.5, -175, 0.5, -250) or UDim2.new(0.5, -300, 0.5, -250)
 menu.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 menu.BackgroundTransparency = 0.1
 menu.Visible = false
@@ -129,14 +138,14 @@ tabFrame.Position = UDim2.new(0, 10, 0, 50)
 tabFrame.BackgroundTransparency = 1
 tabFrame.Parent = menu
 
-local tabs = {'COMBAT', 'MOVEMENT', 'RENDER', 'WORLD', 'PLAYER', 'BYPASS'}
+local tabs = isMobile and {'COMBAT', 'MOVE', 'RENDER', 'PLAYER'} or {'COMBAT', 'MOVEMENT', 'RENDER', 'PLAYER', 'SPIN', 'BYPASS'}
 local tabButtons = {}
 local tabContents = {}
 
 for i, tabName in ipairs(tabs) do
     local btn = Instance.new('TextButton')
-    btn.Size = UDim2.new(1/6, -4, 1, -4)
-    btn.Position = UDim2.new((i-1)/6, 2, 0, 2)
+    btn.Size = UDim2.new(1/#tabs, -4, 1, -4)
+    btn.Position = UDim2.new((i-1)/#tabs, 2, 0, 2)
     btn.BackgroundColor3 = i == 1 and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(40, 40, 50)
     btn.Text = tabName
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -168,9 +177,9 @@ for _, tabName in ipairs(tabs) do
     scroller.Position = UDim2.new(0, 5, 0, 5)
     scroller.BackgroundTransparency = 1
     scroller.BorderSizePixel = 0
-    scroller.ScrollBarThickness = 6
+    scroller.ScrollBarThickness = isMobile and 8 or 6
     scroller.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 50)
-    scroller.CanvasSize = UDim2.new(0, 0, 0, 800)
+    scroller.CanvasSize = UDim2.new(0, 0, 0, 400)
     scroller.Visible = (tabName == 'COMBAT')
     scroller.Parent = contentFrame
     tabContents[tabName] = scroller
@@ -182,21 +191,14 @@ local Settings = {
     Combat = {
         Killaura = {Enabled = false, Range = 18, TargetPart = 'Head', ThroughWalls = false, Silent = true},
         AimAssist = {Enabled = false, Strength = 0.5, FOV = 90, TargetPart = 'Head'},
-        Velocity = {Enabled = false, Horizontal = 0, Vertical = 0},
-        Reach = {Enabled = false, Distance = 3.5},
         AutoClicker = {Enabled = false, CPS = 12},
         Criticals = {Enabled = false, Chance = 100}
     },
     Movement = {
-        Speed = {Enabled = false, Speed = 32, Mode = 'Legit'},
-        Fly = {Enabled = false, Speed = 10, Mode = 'Vanilla'},
-        LongJump = {Enabled = false, Power = 4},
-        HighJump = {Enabled = false, Power = 50},
-        NoFall = {Enabled = false, Mode = 'Packet'},
-        Step = {Enabled = false, Height = 2},
+        Speed = {Enabled = false, Speed = 32},
+        InfiniteJump = {Enabled = false},
         Bhop = {Enabled = false, Speed = 25},
         Sprint = {Enabled = false, Always = true},
-        Spider = {Enabled = false, Speed = 5},
         WallHop = {Enabled = false, Delay = 0.1},
         Phase = {Enabled = false, Distance = 5},
         Blink = {Enabled = false, Time = 3}
@@ -209,28 +211,15 @@ local Settings = {
         FullBright = {Enabled = false},
         Crosshair = {Enabled = false, Size = 5}
     },
-    World = {
-        Scaffold = {Enabled = false, Mode = 'Normal'},
-        NoSlow = {Enabled = false, Percent = 80},
-        FastBreak = {Enabled = false, Speed = 2},
-        FastPlace = {Enabled = false, Speed = 2},
-        AutoTool = {Enabled = false},
-        ChestStealer = {Enabled = false, Delay = 0.1},
-        AutoArmor = {Enabled = false}
-    },
     Player = {
         GodMode = {Enabled = false},
-        AntiFire = {Enabled = false},
         AutoRespawn = {Enabled = false},
         NoRotate = {Enabled = false},
         AntiHunger = {Enabled = false},
-        Freecam = {Enabled = false, Speed = 10},
-        Glide = {Enabled = false, Speed = 0.5}
+        Freecam = {Enabled = false, Speed = 10}
     },
-    Bypass = {
-        AntiCheat = {Mode = 'Universal'},
-        Disabler = {Enabled = false, Mode = 'Watchdog'},
-        Timer = {Enabled = false, Speed = 1}
+    Spin = {
+        SpinBot = {Enabled = false, Speed = 10, Direction = 'Right'}
     }
 }
 
@@ -357,31 +346,20 @@ createToggle(combatScroller, 'Killaura', y, 'Combat', 'Killaura'); y = y + 40
 createSlider(combatScroller, 'Range', y, 'Combat', 'Killaura', 10, 30); y = y + 50
 createToggle(combatScroller, 'Aim Assist', y, 'Combat', 'AimAssist'); y = y + 40
 createSlider(combatScroller, 'FOV', y, 'Combat', 'AimAssist', 30, 180); y = y + 50
-createToggle(combatScroller, 'Velocity', y, 'Combat', 'Velocity'); y = y + 40
-createToggle(combatScroller, 'Reach', y, 'Combat', 'Reach'); y = y + 40
-createSlider(combatScroller, 'Reach Distance', y, 'Combat', 'Reach', 3, 6); y = y + 50
 createToggle(combatScroller, 'Auto Clicker', y, 'Combat', 'AutoClicker'); y = y + 40
 createSlider(combatScroller, 'CPS', y, 'Combat', 'AutoClicker', 5, 20); y = y + 50
 createToggle(combatScroller, 'Criticals', y, 'Combat', 'Criticals'); y = y + 40
 combatScroller.CanvasSize = UDim2.new(0, 0, 0, y)
 
 -- MOVEMENT вкладка
-local moveScroller = tabContents['MOVEMENT']
+local moveScroller = tabContents[isMobile and 'MOVE' or 'MOVEMENT']
 y = 5
 createToggle(moveScroller, 'Speed', y, 'Movement', 'Speed'); y = y + 40
 createSlider(moveScroller, 'Speed Amount', y, 'Movement', 'Speed', 16, 100); y = y + 50
-createToggle(moveScroller, 'Fly', y, 'Movement', 'Fly'); y = y + 40
-createSlider(moveScroller, 'Fly Speed', y, 'Movement', 'Fly', 5, 50); y = y + 50
-createToggle(moveScroller, 'Long Jump', y, 'Movement', 'LongJump'); y = y + 40
-createSlider(moveScroller, 'Power', y, 'Movement', 'LongJump', 1, 10); y = y + 50
-createToggle(moveScroller, 'High Jump', y, 'Movement', 'HighJump'); y = y + 40
-createSlider(moveScroller, 'Jump Power', y, 'Movement', 'HighJump', 30, 200); y = y + 50
-createToggle(moveScroller, 'No Fall', y, 'Movement', 'NoFall'); y = y + 40
-createToggle(moveScroller, 'Step', y, 'Movement', 'Step'); y = y + 40
-createSlider(moveScroller, 'Step Height', y, 'Movement', 'Step', 1, 5); y = y + 50
+createToggle(moveScroller, 'Infinite Jump', y, 'Movement', 'InfiniteJump'); y = y + 40
 createToggle(moveScroller, 'Bhop', y, 'Movement', 'Bhop'); y = y + 40
 createSlider(moveScroller, 'Bhop Speed', y, 'Movement', 'Bhop', 16, 50); y = y + 50
-createToggle(moveScroller, 'Spider', y, 'Movement', 'Spider'); y = y + 40
+createToggle(moveScroller, 'Wall Hop', y, 'Movement', 'WallHop'); y = y + 40
 createToggle(moveScroller, 'Phase', y, 'Movement', 'Phase'); y = y + 40
 createToggle(moveScroller, 'Blink', y, 'Movement', 'Blink'); y = y + 40
 moveScroller.CanvasSize = UDim2.new(0, 0, 0, y)
@@ -397,37 +375,31 @@ createToggle(renderScroller, 'Full Bright', y, 'Render', 'FullBright'); y = y + 
 createToggle(renderScroller, 'Crosshair', y, 'Render', 'Crosshair'); y = y + 40
 renderScroller.CanvasSize = UDim2.new(0, 0, 0, y)
 
--- WORLD вкладка
-local worldScroller = tabContents['WORLD']
-y = 5
-createToggle(worldScroller, 'Scaffold', y, 'World', 'Scaffold'); y = y + 40
-createToggle(worldScroller, 'No Slow', y, 'World', 'NoSlow'); y = y + 40
-createToggle(worldScroller, 'Fast Break', y, 'World', 'FastBreak'); y = y + 40
-createToggle(worldScroller, 'Fast Place', y, 'World', 'FastPlace'); y = y + 40
-createToggle(worldScroller, 'Auto Tool', y, 'World', 'AutoTool'); y = y + 40
-createToggle(worldScroller, 'Chest Stealer', y, 'World', 'ChestStealer'); y = y + 40
-createToggle(worldScroller, 'Auto Armor', y, 'World', 'AutoArmor'); y = y + 40
-worldScroller.CanvasSize = UDim2.new(0, 0, 0, y)
-
 -- PLAYER вкладка
 local playerScroller = tabContents['PLAYER']
 y = 5
 createToggle(playerScroller, 'God Mode', y, 'Player', 'GodMode'); y = y + 40
-createToggle(playerScroller, 'Anti Fire', y, 'Player', 'AntiFire'); y = y + 40
 createToggle(playerScroller, 'Auto Respawn', y, 'Player', 'AutoRespawn'); y = y + 40
 createToggle(playerScroller, 'No Rotate', y, 'Player', 'NoRotate'); y = y + 40
 createToggle(playerScroller, 'Anti Hunger', y, 'Player', 'AntiHunger'); y = y + 40
 createToggle(playerScroller, 'Freecam', y, 'Player', 'Freecam'); y = y + 40
-createToggle(playerScroller, 'Glide', y, 'Player', 'Glide'); y = y + 40
 playerScroller.CanvasSize = UDim2.new(0, 0, 0, y)
 
--- BYPASS вкладка
-local bypassScroller = tabContents['BYPASS']
-y = 5
-createToggle(bypassScroller, 'Disabler', y, 'Bypass', 'Disabler'); y = y + 40
-createToggle(bypassScroller, 'Timer', y, 'Bypass', 'Timer'); y = y + 40
-createSlider(bypassScroller, 'Timer Speed', y, 'Bypass', 'Timer', 0.5, 5); y = y + 50
-bypassScroller.CanvasSize = UDim2.new(0, 0, 0, y)
+if not isMobile then
+    -- SPIN вкладка (только для ПК)
+    local spinScroller = tabContents['SPIN']
+    y = 5
+    createToggle(spinScroller, 'Spin Bot', y, 'Spin', 'SpinBot'); y = y + 40
+    createSlider(spinScroller, 'Spin Speed', y, 'Spin', 'SpinBot', 1, 30); y = y + 50
+    spinScroller.CanvasSize = UDim2.new(0, 0, 0, y)
+    
+    -- BYPASS вкладка (только для ПК)
+    local bypassScroller = tabContents['BYPASS']
+    y = 5
+    createToggle(bypassScroller, 'Timer', y, 'Bypass', 'Timer'); y = y + 40
+    createSlider(bypassScroller, 'Timer Speed', y, 'Bypass', 'Timer', 0.5, 5); y = y + 50
+    bypassScroller.CanvasSize = UDim2.new(0, 0, 0, y)
+end
 
 -- ==================== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ====================
 
@@ -447,41 +419,38 @@ end
 
 -- ==================== ОТКРЫТИЕ МЕНЮ ====================
 
-menuButton.MouseButton1Click:Connect(function()
-    menu.Visible = not menu.Visible
-end)
-
-userInputService.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == Enum.KeyCode.RightShift then
+if isMobile then
+    menuButton.MouseButton1Click:Connect(function()
         menu.Visible = not menu.Visible
-    end
-end)
+    end)
+else
+    userInputService.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.KeyCode == Enum.KeyCode.RightShift then
+            menu.Visible = not menu.Visible
+        end
+        if input.KeyCode == Enum.KeyCode.RightShift then
+            mobileCircle.Visible = not mobileCircle.Visible
+        end
+    end)
+end
 
--- ==================== ФЛАЙ ХАК ====================
+-- ==================== INFINITE JUMP ====================
 
-local function doFly()
-    if not Settings.Movement.Fly.Enabled then return end
+local function doInfiniteJump()
+    if not Settings.Movement.InfiniteJump.Enabled then return end
     local player = playersService.LocalPlayer
     if not player or not player.Character then return end
     
-    local root = player.Character:FindFirstChild('HumanoidRootPart')
     local humanoid = player.Character:FindFirstChild('Humanoid')
+    if not humanoid then return end
     
-    if not root or not humanoid then return end
-    
-    if Settings.Movement.Fly.Mode == 'Vanilla' then
-        root.Velocity = Vector3.new(0, 0, 0)
-        if userInputService:IsKeyDown(Enum.KeyCode.Space) then
-            root.Velocity = Vector3.new(root.Velocity.X, Settings.Movement.Fly.Speed, root.Velocity.Z)
-        elseif userInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-            root.Velocity = Vector3.new(root.Velocity.X, -Settings.Movement.Fly.Speed, root.Velocity.Z)
-        end
-        humanoid.PlatformStand = true
+    if userInputService:IsKeyDown(Enum.KeyCode.Space) then
+        humanoid.Jump = true
     end
 end
 
--- ==================== СПИД ХАК ====================
+-- ==================== SPEED HACK ====================
 
 local function doSpeed()
     if not Settings.Movement.Speed.Enabled then return end
@@ -496,6 +465,95 @@ local function doSpeed()
     if humanoid.MoveDirection.Magnitude > 0 then
         root.Velocity = root.Velocity + humanoid.MoveDirection * (Settings.Movement.Speed.Speed - 16)
     end
+end
+
+-- ==================== BHOP ====================
+
+local function doBhop()
+    if not Settings.Movement.Bhop.Enabled then return end
+    local player = playersService.LocalPlayer
+    if not player or not player.Character then return end
+    
+    local humanoid = player.Character:FindFirstChild('Humanoid')
+    local root = player.Character:FindFirstChild('HumanoidRootPart')
+    
+    if not humanoid or not root then return end
+    
+    if humanoid.MoveDirection.Magnitude > 0 and humanoid.FloorMaterial then
+        root.Velocity = root.Velocity + humanoid.MoveDirection * (Settings.Movement.Bhop.Speed - 16)
+        task.wait(0.05)
+        humanoid.Jump = true
+    end
+end
+
+-- ==================== WALL HOP ====================
+
+local function doWallHop()
+    if not Settings.Movement.WallHop.Enabled then return end
+    local player = playersService.LocalPlayer
+    if not player or not player.Character then return end
+    
+    local humanoid = player.Character:FindFirstChild('Humanoid')
+    local root = player.Character:FindFirstChild('HumanoidRootPart')
+    
+    if not humanoid or not root then return end
+    
+    if humanoid.MoveDirection.Magnitude > 0 then
+        root.Velocity = root.Velocity + humanoid.MoveDirection * 20
+        task.wait(Settings.Movement.WallHop.Delay)
+    end
+end
+
+-- ==================== PHASE ====================
+
+local function doPhase()
+    if not Settings.Movement.Phase.Enabled then return end
+    local player = playersService.LocalPlayer
+    if not player or not player.Character then return end
+    
+    local root = player.Character:FindFirstChild('HumanoidRootPart')
+    if not root then return end
+    
+    root.CFrame = root.CFrame + workspace.CurrentCamera.CFrame.LookVector * Settings.Movement.Phase.Distance
+end
+
+-- ==================== BLINK ====================
+
+local blinkPositions = {}
+local blinkTime = 0
+local function doBlink()
+    if not Settings.Movement.Blink.Enabled then return end
+    local player = playersService.LocalPlayer
+    if not player or not player.Character then return end
+    
+    local root = player.Character:FindFirstChild('HumanoidRootPart')
+    if not root then return end
+    
+    blinkTime = blinkTime + 0.1
+    if blinkTime >= Settings.Movement.Blink.Time then
+        if #blinkPositions > 0 then
+            root.CFrame = blinkPositions[1]
+            blinkPositions = {}
+        end
+        blinkTime = 0
+    else
+        table.insert(blinkPositions, root.CFrame)
+    end
+end
+
+-- ==================== SPIN BOT (ТОЛЬКО ПК) ====================
+
+local spinAngle = 0
+local function doSpin()
+    if not Settings.Spin or not Settings.Spin.SpinBot.Enabled then return end
+    local player = playersService.LocalPlayer
+    if not player or not player.Character then return end
+    
+    local root = player.Character:FindFirstChild('HumanoidRootPart')
+    if not root then return end
+    
+    spinAngle = spinAngle + Settings.Spin.SpinBot.Speed
+    root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, math.rad(spinAngle), 0)
 end
 
 -- ==================== ESP ====================
@@ -602,11 +660,44 @@ runService.RenderStepped:Connect(function()
     end
 end)
 
+-- ==================== GOD MODE ====================
+
+local function doGodMode()
+    if not Settings.Player.GodMode.Enabled then return end
+    local player = playersService.LocalPlayer
+    if not player or not player.Character then return end
+    
+    local humanoid = player.Character:FindFirstChild('Humanoid')
+    if humanoid and humanoid.Health < humanoid.MaxHealth then
+        humanoid.Health = humanoid.MaxHealth
+    end
+end
+
+-- ==================== FULL BRIGHT ====================
+
+local function doFullBright()
+    if not Settings.Render.FullBright.Enabled then return end
+    lighting.Brightness = 3
+    lighting.GlobalShadows = false
+    lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+else
+    lighting.Brightness = 1
+    lighting.GlobalShadows = true
+    lighting.OutdoorAmbient = Color3.fromRGB(127, 127, 127)
+end
+
 -- ==================== ГЛАВНЫЙ ЦИКЛ ====================
 
 runService.Heartbeat:Connect(function()
-    doFly()
     doSpeed()
+    doInfiniteJump()
+    doBhop()
+    doWallHop()
+    doPhase()
+    doBlink()
+    if not isMobile then doSpin() end
+    doGodMode()
+    doFullBright()
 end)
 
 -- ==================== ИНИЦИАЛИЗАЦИЯ ====================
@@ -622,5 +713,5 @@ end
 playersService.PlayerAdded:Connect(createESP)
 
 print('✅ rusticlientv2 загружен!')
-print('📌 Нажмите Right Shift для меню')
-print('🎯 Все функции активированы!')
+print('📌 Телефон: кружок в центре | ПК: Right Shift')
+print('🎯 Infinite Jump работает!')
