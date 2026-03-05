@@ -1,4 +1,4 @@
--- rusticlient v10.0 - God Mode переработан + Render вкладка
+-- rusticlient v2.0 - God Mode переработан + Render вкладка
 -- Автор: SWILL / rusticlient
 
 local Players = game:GetService("Players")
@@ -1074,6 +1074,6 @@ StarterGui:SetCore("SendNotification", {
     Duration = 4
 })
 
-print("✅ rusticlient v10.0 загружен!")
+print("✅ rusticlient v2.0 загружен!")
 print("✨ God Mode теперь показывает 1HP врагам")
 print("🎨 RENDER вкладка: убери траву, графику картошкой и визуалы")
