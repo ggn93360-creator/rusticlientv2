@@ -1,1202 +1,224 @@
--- rusticlient v15.0 - Полная рабочая версия для ПК
--- Автор: SWILL / rusticlient
+I'll create a comprehensive Roblox script with all the features you requested. This will be a sophisticated custom menu with ESP, visual effects, and various player enhancements.
+
+```lua
+-- Roblox Custom Menu Script with ESP and Features
+-- Created for educational purposes
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
-local Camera = workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
-local StarterGui = game:GetService("StarterGui")
-local Lighting = game:GetService("Lighting")
-local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
+local TextService = game:GetService("TextService")
 
--- ==================== ОПРЕДЕЛЕНИЕ УСТРОЙСТВА ====================
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
 
-local isMobile = UserInputService.TouchEnabled
-local injectorType = "UNKNOWN"
-
-if identifyexecutor then
-    injectorType = identifyexecutor()
-end
-
--- ==================== КОНФИГИ ====================
-
-local configFolder = "rusticlient_configs"
-local currentConfig = "default"
-
-local function saveConfig(name)
-    local data = HttpService:JSONEncode(settings)
-    writefile(configFolder .. "/" .. name .. ".json", data)
-    StarterGui:SetCore("SendNotification", {
-        Title = "Конфиг сохранен",
-        Text = "Сохранено как: " .. name,
-        Duration = 2
-    })
-end
-
-local function loadConfig(name)
-    local file = configFolder .. "/" .. name .. ".json"
-    if isfile(file) then
-        local data = readfile(file)
-        local newSettings = HttpService:JSONDecode(data)
-        for k, v in pairs(newSettings) do
-            settings[k] = v
-        end
-        currentConfig = name
-        StarterGui:SetCore("SendNotification", {
-            Title = "Конфиг загружен",
-            Text = "Загружен: " .. name,
-            Duration = 2
-        })
-        updateAllToggles()
-        applyRenderSettings()
-    end
-end
-
-local function listConfigs()
-    local files = listfiles(configFolder)
-    local configs = {}
-    for _, file in ipairs(files) do
-        if file:match("%.json$") then
-            table.insert(configs, file:gsub(configFolder .. "/", ""):gsub("%.json$", ""))
-        end
-    end
-    return configs
-end
-
--- ==================== ОЧИСТКА СТАРЫХ ГУИ ====================
-
-for _, v in ipairs(CoreGui:GetChildren()) do
-    if v.Name == "rusticlient" then
-        v:Destroy()
-    end
-end
-
-local gui = Instance.new("ScreenGui")
-gui.Name = "rusticlient"
-gui.ResetOnSpawn = false
-gui.Parent = CoreGui
-
--- ==================== КНОПКА С АВАТАРКОЙ ====================
-
-local menuButton = Instance.new("ImageButton")
-menuButton.Size = UDim2.new(0, 70, 0, 70)
-menuButton.Position = UDim2.new(0, 15, 0.5, -35)
-menuButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-menuButton.BackgroundTransparency = 0
-menuButton.Image = "rbxassetid://90064663091843"
-menuButton.Visible = true
-menuButton.Parent = gui
-
--- Делаем кнопку круглой
-local menuButtonCorner = Instance.new("UICorner")
-menuButtonCorner.CornerRadius = UDim.new(1, 0)
-menuButtonCorner.Parent = menuButton
-
--- Добавляем обводку
-local menuButtonStroke = Instance.new("UIStroke")
-menuButtonStroke.Color = Color3.fromRGB(255, 50, 50)
-menuButtonStroke.Thickness = 2
-menuButtonStroke.Parent = menuButton
-
--- ==================== МЕНЮ С ПРОЗРАЧНОСТЬЮ ====================
-
-local menu = Instance.new("Frame")
-menu.Size = UDim2.new(0, 500, 0, 700)
-menu.Position = UDim2.new(0.5, -250, 0.5, -350)
-menu.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-menu.BackgroundTransparency = 0.15
-menu.Visible = false
-menu.Active = true
-menu.Draggable = true
-menu.Parent = gui
-
-local menuCorner = Instance.new("UICorner")
-menuCorner.CornerRadius = UDim.new(0, 20)
-menuCorner.Parent = menu
-
--- Стеклянный эффект
-local menuGlass = Instance.new("Frame")
-menuGlass.Size = UDim2.new(1, 0, 1, 0)
-menuGlass.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-menuGlass.BackgroundTransparency = 0.95
-menuGlass.BorderSizePixel = 0
-menuGlass.Parent = menu
-
--- Заголовок
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 50)
-title.BackgroundTransparency = 1
-title.Text = "RUSTICLIENT v15.0"
-title.TextColor3 = Color3.fromRGB(255, 100, 100)
-title.TextScaled = true
-title.Font = Enum.Font.GothamBold
-title.Parent = menu
-
--- Инфо
-local infoLabel = Instance.new("TextLabel")
-infoLabel.Size = UDim2.new(1, -20, 0, 25)
-infoLabel.Position = UDim2.new(0, 10, 0, 50)
-infoLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-infoLabel.BackgroundTransparency = 0.3
-infoLabel.Text = "Device: " .. (isMobile and "📱 Mobile" or "💻 PC") .. " | " .. injectorType
-infoLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
-infoLabel.TextScaled = true
-infoLabel.Font = Enum.Font.SourceSans
-infoLabel.Parent = menu
-
-local infoCorner = Instance.new("UICorner")
-infoCorner.CornerRadius = UDim.new(0, 8)
-infoCorner.Parent = infoLabel
-
--- ==================== СНЕЖИНКИ В МЕНЮ (ТОЛЬКО ДЛЯ ПК) ====================
-
-if not isMobile then
-    local snowEmitter = Instance.new("Frame")
-    snowEmitter.Size = UDim2.new(1, 0, 1, 0)
-    snowEmitter.BackgroundTransparency = 1
-    snowEmitter.Parent = menu
-    
-    local snowflakes = {}
-    local snowCount = 15
-    
-    for i = 1, snowCount do
-        local snow = Instance.new("TextLabel")
-        snow.Size = UDim2.new(0, 15, 0, 15)
-        snow.Position = UDim2.new(math.random(), 0, math.random(), 0)
-        snow.BackgroundTransparency = 1
-        snow.Text = "❄️"
-        snow.TextColor3 = Color3.fromRGB(255, 255, 255)
-        snow.TextScaled = true
-        snow.Parent = snowEmitter
-        table.insert(snowflakes, {obj = snow, speed = math.random(20, 50) / 100})
-    end
-    
-    spawn(function()
-        while menu.Parent do
-            wait(0.05)
-            for _, flake in ipairs(snowflakes) do
-                local pos = flake.obj.Position
-                local y = pos.Y.Scale + flake.speed / 1000
-                if y > 1 then
-                    y = 0
-                    flake.obj.Position = UDim2.new(math.random(), 0, 0, 0)
-                else
-                    flake.obj.Position = UDim2.new(pos.X.Scale, 0, y, 0)
-                end
-            end
-        end
-    end)
-end
-
--- ==================== ВКЛАДКИ ====================
-
-local tabFrame = Instance.new("Frame")
-tabFrame.Size = UDim2.new(1, -20, 0, 40)
-tabFrame.Position = UDim2.new(0, 10, 0, 80)
-tabFrame.BackgroundTransparency = 1
-tabFrame.Parent = menu
-
-local tabs = {"ESP", "AIM", "MOVE", "PLAYER", "RENDER", "SPIN", "CONFIGS"}
-local tabButtons = {}
-local tabContents = {}
-
-for i, tabName in ipairs(tabs) do
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1/7, -5, 1, -5)
-    btn.Position = UDim2.new((i-1)/7, 2, 0, 2)
-    btn.BackgroundColor3 = i == 1 and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(40, 40, 50)
-    btn.Text = tabName
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextScaled = true
-    btn.Font = Enum.Font.GothamBold
-    btn.Parent = tabFrame
-    
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 8)
-    btnCorner.Parent = btn
-    
-    tabButtons[tabName] = btn
-end
-
--- КОНТЕЙНЕР ДЛЯ КОНТЕНТА
-local contentFrame = Instance.new("Frame")
-contentFrame.Size = UDim2.new(1, -20, 1, -140)
-contentFrame.Position = UDim2.new(0, 10, 0, 125)
-contentFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-contentFrame.BackgroundTransparency = 0.2
-contentFrame.Parent = menu
-
-local contentCorner = Instance.new("UICorner")
-contentCorner.CornerRadius = UDim.new(0, 10)
-contentCorner.Parent = contentFrame
-
--- СКОЛЛЕРЫ
-for _, tabName in ipairs(tabs) do
-    local scroller = Instance.new("ScrollingFrame")
-    scroller.Name = tabName .. "Scroller"
-    scroller.Size = UDim2.new(1, -10, 1, -10)
-    scroller.Position = UDim2.new(0, 5, 0, 5)
-    scroller.BackgroundTransparency = 1
-    scroller.BorderSizePixel = 0
-    scroller.ScrollBarThickness = 6
-    scroller.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 50)
-    scroller.CanvasSize = UDim2.new(0, 0, 0, 800)
-    scroller.Visible = (tabName == "ESP")
-    scroller.Parent = contentFrame
-    tabContents[tabName] = scroller
-end
-
--- ==================== НАСТРОЙКИ ====================
-
-local settings = {
-    -- ESP
-    esp = false,
-    names = true,
-    distance = true,
-    health = true,
-    wallhack = true,
-    
-    -- Aimbot
-    aimbot = false,
-    aimFOV = 200,
-    aimSmooth = 5,
-    aimTeamCheck = false,
-    aimWallCheck = true,
-    aimTargetPart = "Head",
-    aimTargetType = "Closest",
-    aimPredictMovement = false,
-    aimPredictAmount = 0.5,
-    noRecoil = false,
-    noSpread = false,
-    
-    -- Movement
-    speed = false,
-    speedAmount = 32,
-    
-    -- Player
-    godMode = false,
-    noFallDamage = false,
-    infiniteJump = false,
-    noClip = false,
-    noJumpCooldown = false,
-    
-    -- Render
-    removeGrass = false,
-    removeFoliage = false,
-    removeTrees = false,
-    removeClouds = false,
-    removeFog = false,
-    removeEffects = false,
-    removeBlur = false,
-    removeTransparency = false,
-    potatoGraphics = false,
-    fullBright = false,
-    chineseHat = false,
-    jumpTrail = false,
-    
-    -- Spin
-    spinBot = false,
-    spinSpeed = 10
+-- Configuration
+local Config = {
+    ESP = {
+        Enabled = true,
+        ShowDistance = true,
+        ShowHP = true,
+        ShowItems = true,
+        MaxDistance = 500,
+        Color = Color3.new(0, 1, 0)
+    },
+    Visuals = {
+        FOVCircle = {
+            Enabled = true,
+            Radius = 90,
+            Color = Color3.new(1, 1, 1),
+            Transparency = 0.5
+        },
+        Particles = {
+            Enabled = true,
+            Type = "snowflakes", -- snowflakes, hearts, dollars
+            Density = 50
+        },
+        Jumpscare = {
+            Enabled = false,
+            Radius = 30,
+            Color = Color3.new(1, 0, 0)
+        }
+    },
+    Movement = {
+        BunnyHop = false,
+        WalkSpeed = 16,
+        JumpPower = 50
+    },
+    Camera = {
+        SideView = false,
+        Offset = 10
+    }
 }
 
--- ==================== ФУНКЦИИ ДЛЯ ПЕРЕКЛЮЧАТЕЛЕЙ ====================
+-- Main GUI Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CustomMenu"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-local toggleObjects = {}
+-- Main Menu Frame
+local MenuFrame = Instance.new("Frame")
+MenuFrame.Name = "MainMenu"
+MenuFrame.Parent = ScreenGui
+MenuFrame.Size = UDim2.new(0, 400, 0, 600)
+MenuFrame.Position = UDim2.new(0.5, -200, 0.5, -300)
+MenuFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+MenuFrame.BackgroundTransparency = 0.3
+MenuFrame.BorderSizePixel = 0
+MenuFrame.Active = true
+MenuFrame.Draggable = true
 
-local function createToggle(parent, name, yPos, setting)
-    local bg = Instance.new("Frame")
-    bg.Size = UDim2.new(0.9, 0, 0, 35)
-    bg.Position = UDim2.new(0.05, 0, 0, yPos)
-    bg.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-    bg.BorderSizePixel = 0
-    bg.Parent = parent
+-- Decorative Crossed Swords
+local Sword1 = Instance.new("ImageLabel")
+Sword1.Name = "Sword1"
+Sword1.Parent = MenuFrame
+Sword1.Size = UDim2.new(0, 100, 0, 150)
+Sword1.Position = UDim2.new(0, 150, 0, 20)
+Sword1.BackgroundTransparency = 1
+Sword1.Image = "rbxassetid://1492475961" -- Sword image
+Sword1.Rotation = -30
+
+local Sword2 = Instance.new("ImageLabel")
+Sword2.Name = "Sword2"
+Sword2.Parent = MenuFrame
+Sword2.Size = UDim2.new(0, 100, 0, 150)
+Sword2.Position = UDim2.new(0, 150, 0, 20)
+Sword2.BackgroundTransparency = 1
+Sword2.Image = "rbxassetid://1492475961" -- Sword image
+Sword2.Rotation = 30
+
+-- Settings Icon
+local SettingsButton = Instance.new("TextButton")
+SettingsButton.Name = "SettingsButton"
+SettingsButton.Parent = MenuFrame
+SettingsButton.Size = UDim2.new(0, 40, 0, 40)
+SettingsButton.Position = UDim2.new(1, -50, 0, 10)
+SettingsButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+SettingsButton.BorderSizePixel = 0
+SettingsButton.Font = Enum.Font.SourceSansBold
+SettingsButton.Text = "⚙"
+SettingsButton.TextSize = 20
+SettingsButton.TextColor3 = Color3.new(1, 1, 1)
+
+-- Menu Sections
+local function createSection(name, y)
+    local Section = Instance.new("Frame")
+    Section.Name = name
+    Section.Parent = MenuFrame
+    Section.Size = UDim2.new(0, 360, 0, 80)
+    Section.Position = UDim2.new(0, 20, 0, y)
+    Section.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+    Section.BackgroundTransparency = 0.5
+    Section.BorderSizePixel = 0
     
-    local bgCorner = Instance.new("UICorner")
-    bgCorner.CornerRadius = UDim.new(0, 8)
-    bgCorner.Parent = bg
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Parent = Section
+    Title.Size = UDim2.new(0, 360, 0, 25)
+    Title.Position = UDim2.new(0, 0, 0, 0)
+    Title.BackgroundColor3 = Color3.new(0, 0, 0)
+    Title.BackgroundTransparency = 0.7
+    Title.BorderSizePixel = 0
+    Title.Font = Enum.Font.SourceSansBold
+    Title.Text = name
+    Title.TextSize = 16
+    Title.TextColor3 = Color3.new(1, 1, 1)
     
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.6, -5, 1, 0)
-    label.Position = UDim2.new(0, 10, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextScaled = true
-    label.Font = Enum.Font.SourceSans
-    label.Parent = bg
+    return Section
+end
+
+-- Create menu sections
+local ESPSection = createSection("ESP Settings", 180)
+local VisualSection = createSection("Visual Settings", 270)
+local MovementSection = createSection("Movement Settings", 360)
+local ConfigSection = createSection("Config", 450)
+
+-- ESP Toggles
+local function createToggle(parent, name, y, callback)
+    local Toggle = Instance.new("TextButton")
+    Toggle.Name = name
+    Toggle.Parent = parent
+    Toggle.Size = UDim2.new(0, 100, 0, 25)
+    Toggle.Position = UDim2.new(0, 10, 0, y)
+    Toggle.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    Toggle.BorderSizePixel = 0
+    Toggle.Font = Enum.Font.SourceSans
+    Toggle.Text = name
+    Toggle.TextSize = 14
+    Toggle.TextColor3 = Color3.new(1, 1, 1)
     
-    local toggle = Instance.new("TextButton")
-    toggle.Size = UDim2.new(0, 50, 0, 25)
-    toggle.Position = UDim2.new(1, -60, 0.5, -12.5)
-    toggle.BackgroundColor3 = settings[setting] and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-    toggle.Text = settings[setting] and "ON" or "OFF"
-    toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggle.TextScaled = true
-    toggle.Font = Enum.Font.GothamBold
-    toggle.Parent = bg
+    Toggle.MouseButton1Click:Connect(function()
+        callback()
+        Toggle.BackgroundColor3 = Toggle.BackgroundColor3 == Color3.new(0.3, 0.3, 0.3) and Color3.new(0, 1, 0) or Color3.new(0.3, 0.3, 0.3)
+    end)
     
-    local toggleCorner = Instance.new("UICorner")
-    toggleCorner.CornerRadius = UDim.new(0, 5)
-    toggleCorner.Parent = toggle
+    return Toggle
+end
+
+-- FOV Slider
+local function createSlider(parent, name, y, min, max, default, callback)
+    local Slider = Instance.new("Frame")
+    Slider.Name = name
+    Slider.Parent = parent
+    Slider.Size = UDim2.new(0, 200, 0, 20)
+    Slider.Position = UDim2.new(0, 10, 0, y)
+    Slider.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    Slider.BorderSizePixel = 0
     
-    toggle.MouseButton1Click:Connect(function()
-        settings[setting] = not settings[setting]
-        toggle.BackgroundColor3 = settings[setting] and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-        toggle.Text = settings[setting] and "ON" or "OFF"
-        
-        if setting:find("remove") or setting == "potatoGraphics" or setting == "fullBright" then
-            applyRenderSettings()
+    local SliderBar = Instance.new("Frame")
+    SliderBar.Name = "Bar"
+    SliderBar.Parent = Slider
+    SliderBar.Size = UDim2.new(0, 10, 0, 20)
+    SliderBar.Position = UDim2.new((default - min) / (max - min), -5, 0, 0)
+    SliderBar.BackgroundColor3 = Color3.new(0, 1, 0)
+    SliderBar.BorderSizePixel = 0
+    
+    local Label = Instance.new("TextLabel")
+    Label.Name = "Label"
+    Label.Parent = Slider
+    Label.Size = UDim2.new(0, 200, 0, 20)
+    Label.Position = UDim2.new(0, 0, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Font = Enum.Font.SourceSans
+    Label.Text = name .. ": " .. default
+    Label.TextSize = 12
+    Label.TextColor3 = Color3.new(1, 1, 1)
+    
+    local dragging = false
+    
+    SliderBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
         end
     end)
     
-    if not toggleObjects[setting] then
-        toggleObjects[setting] = {}
-    end
-    table.insert(toggleObjects[setting], toggle)
-    
-    return bg
-end
-
-local function updateAllToggles()
-    for setting, toggles in pairs(toggleObjects) do
-        for _, toggle in ipairs(toggles) do
-            toggle.BackgroundColor3 = settings[setting] and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-            toggle.Text = settings[setting] and "ON" or "OFF"
-        end
-    end
-end
-
-local function createSlider(parent, name, yPos, min, max, setting, suffix)
-    local bg = Instance.new("Frame")
-    bg.Size = UDim2.new(0.9, 0, 0, 50)
-    bg.Position = UDim2.new(0.05, 0, 0, yPos)
-    bg.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-    bg.BorderSizePixel = 0
-    bg.Parent = parent
-    
-    local bgCorner = Instance.new("UICorner")
-    bgCorner.CornerRadius = UDim.new(0, 8)
-    bgCorner.Parent = bg
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.5, -5, 0.4, 0)
-    label.Position = UDim2.new(0, 10, 0, 5)
-    label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextScaled = true
-    label.Font = Enum.Font.SourceSans
-    label.Parent = bg
-    
-    local valueLabel = Instance.new("TextLabel")
-    valueLabel.Size = UDim2.new(0, 40, 0.4, 0)
-    valueLabel.Position = UDim2.new(1, -50, 0, 5)
-    valueLabel.BackgroundTransparency = 1
-    valueLabel.Text = tostring(settings[setting]) .. suffix
-    valueLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-    valueLabel.TextScaled = true
-    valueLabel.Font = Enum.Font.GothamBold
-    valueLabel.Parent = bg
-    
-    local sliderBg = Instance.new("Frame")
-    sliderBg.Size = UDim2.new(0.8, 0, 0, 8)
-    sliderBg.Position = UDim2.new(0.1, 0, 0, 30)
-    sliderBg.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    sliderBg.BorderSizePixel = 0
-    sliderBg.Parent = bg
-    
-    local sliderBgCorner = Instance.new("UICorner")
-    sliderBgCorner.CornerRadius = UDim.new(0, 4)
-    sliderBgCorner.Parent = sliderBg
-    
-    local slider = Instance.new("Frame")
-    slider.Size = UDim2.new((settings[setting] - min) / (max - min), 0, 1, 0)
-    slider.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    slider.BorderSizePixel = 0
-    slider.Parent = sliderBg
-    
-    local sliderCorner = Instance.new("UICorner")
-    sliderCorner.CornerRadius = UDim.new(0, 4)
-    sliderCorner.Parent = slider
-    
-    local function updateSlider(input)
-        if not sliderBg.AbsoluteSize.X then return end
-        local pos = math.clamp(input.Position.X - sliderBg.AbsolutePosition.X, 0, sliderBg.AbsoluteSize.X)
-        local percent = pos / sliderBg.AbsoluteSize.X
-        settings[setting] = min + (max - min) * percent
-        slider.Size = UDim2.new(percent, 0, 1, 0)
-        valueLabel.Text = math.floor(settings[setting]) .. suffix
-    end
-    
-    sliderBg.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            updateSlider(input)
-        end
-    end)
-    
-    sliderBg.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            updateSlider(input)
-        end
-    end)
-    
-    return bg
-end
-
--- ==================== ЗАПОЛНЯЕМ ВКЛАДКИ ====================
-
--- ESP вкладка
-local espScroller = tabContents["ESP"]
-local y = 5
-createToggle(espScroller, "ESP", y, "esp"); y = y + 40
-createToggle(espScroller, "Names", y, "names"); y = y + 40
-createToggle(espScroller, "Distance", y, "distance"); y = y + 40
-createToggle(espScroller, "Health", y, "health"); y = y + 40
-createToggle(espScroller, "Wallhack", y, "wallhack"); y = y + 40
-espScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- AIM вкладка
-local aimScroller = tabContents["AIM"]
-y = 5
-createToggle(aimScroller, "Aimbot", y, "aimbot"); y = y + 40
-createSlider(aimScroller, "FOV", y, 50, 500, "aimFOV", "px"); y = y + 55
-createSlider(aimScroller, "Smooth", y, 1, 20, "aimSmooth", ""); y = y + 55
-createToggle(aimScroller, "Team Check", y, "aimTeamCheck"); y = y + 40
-createToggle(aimScroller, "Wall Check", y, "aimWallCheck"); y = y + 40
-createToggle(aimScroller, "Predict Move", y, "aimPredictMovement"); y = y + 40
-createSlider(aimScroller, "Prediction", y, 0.1, 2, "aimPredictAmount", ""); y = y + 55
-createToggle(aimScroller, "No Recoil", y, "noRecoil"); y = y + 40
-createToggle(aimScroller, "No Spread", y, "noSpread"); y = y + 40
-aimScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- MOVE вкладка
-local moveScroller = tabContents["MOVE"]
-y = 5
-createToggle(moveScroller, "Speed", y, "speed"); y = y + 40
-createSlider(moveScroller, "Speed Amount", y, 16, 100, "speedAmount", ""); y = y + 55
-moveScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- PLAYER вкладка
-local playerScroller = tabContents["PLAYER"]
-y = 5
-createToggle(playerScroller, "God Mode", y, "godMode"); y = y + 40
-createToggle(playerScroller, "No Fall", y, "noFallDamage"); y = y + 40
-createToggle(playerScroller, "No Jump CD", y, "noJumpCooldown"); y = y + 40
-createToggle(playerScroller, "Infinite Jump", y, "infiniteJump"); y = y + 40
-createToggle(playerScroller, "No Clip", y, "noClip"); y = y + 40
-playerScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- RENDER вкладка
-local renderScroller = tabContents["RENDER"]
-y = 5
-createToggle(renderScroller, "Remove Grass", y, "removeGrass"); y = y + 40
-createToggle(renderScroller, "Remove Foliage", y, "removeFoliage"); y = y + 40
-createToggle(renderScroller, "Remove Trees", y, "removeTrees"); y = y + 40
-createToggle(renderScroller, "Remove Clouds", y, "removeClouds"); y = y + 40
-createToggle(renderScroller, "Remove Fog", y, "removeFog"); y = y + 40
-createToggle(renderScroller, "Remove Effects", y, "removeEffects"); y = y + 40
-createToggle(renderScroller, "Remove Blur", y, "removeBlur"); y = y + 40
-createToggle(renderScroller, "Remove Transparency", y, "removeTransparency"); y = y + 40
-createToggle(renderScroller, "Potato Graphics", y, "potatoGraphics"); y = y + 40
-createToggle(renderScroller, "Full Bright", y, "fullBright"); y = y + 40
-createToggle(renderScroller, "Chinese Hat", y, "chineseHat"); y = y + 40
-createToggle(renderScroller, "Jump Trail", y, "jumpTrail"); y = y + 40
-renderScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- SPIN вкладка
-local spinScroller = tabContents["SPIN"]
-y = 5
-createToggle(spinScroller, "Spin Bot", y, "spinBot"); y = y + 40
-createSlider(spinScroller, "Spin Speed", y, 1, 30, "spinSpeed", ""); y = y + 55
-spinScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- CONFIGS вкладка
-local configScroller = tabContents["CONFIGS"]
-y = 5
-
-local saveNameInput = Instance.new("TextBox")
-saveNameInput.Size = UDim2.new(0.8, 0, 0, 35)
-saveNameInput.Position = UDim2.new(0.1, 0, 0, y)
-saveNameInput.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-saveNameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-saveNameInput.PlaceholderText = "Имя конфига"
-saveNameInput.Text = ""
-saveNameInput.TextScaled = true
-saveNameInput.Font = Enum.Font.SourceSans
-saveNameInput.Parent = configScroller
-y = y + 40
-
-local saveBtn = Instance.new("TextButton")
-saveBtn.Size = UDim2.new(0.4, 0, 0, 35)
-saveBtn.Position = UDim2.new(0.1, 0, 0, y)
-saveBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-saveBtn.Text = "💾 Сохранить"
-saveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-saveBtn.TextScaled = true
-saveBtn.Font = Enum.Font.GothamBold
-saveBtn.Parent = configScroller
-
-local saveCorner = Instance.new("UICorner")
-saveCorner.CornerRadius = UDim.new(0, 8)
-saveCorner.Parent = saveBtn
-
-local loadBtn = Instance.new("TextButton")
-loadBtn.Size = UDim2.new(0.4, 0, 0, 35)
-loadBtn.Position = UDim2.new(0.5, 5, 0, y)
-loadBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-loadBtn.Text = "📂 Загрузить"
-loadBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-loadBtn.TextScaled = true
-loadBtn.Font = Enum.Font.GothamBold
-loadBtn.Parent = configScroller
-
-local loadCorner = Instance.new("UICorner")
-loadCorner.CornerRadius = UDim.new(0, 8)
-loadCorner.Parent = loadBtn
-
-y = y + 45
-
-local configsList = Instance.new("TextLabel")
-configsList.Size = UDim2.new(0.8, 0, 0, 100)
-configsList.Position = UDim2.new(0.1, 0, 0, y)
-configsList.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-configsList.BackgroundTransparency = 0.3
-configsList.Text = "Доступные конфиги:\n(появятся после сохранения)"
-configsList.TextColor3 = Color3.fromRGB(200, 200, 255)
-configsList.TextScaled = true
-configsList.Font = Enum.Font.SourceSans
-configsList.Parent = configScroller
-
-local listCorner = Instance.new("UICorner")
-listCorner.CornerRadius = UDim.new(0, 8)
-listCorner.Parent = configsList
-
-y = y + 110
-
-saveBtn.MouseButton1Click:Connect(function()
-    local name = saveNameInput.Text
-    if name and name ~= "" then
-        saveConfig(name)
-        local configs = listConfigs()
-        configsList.Text = "Доступные конфиги:\n" .. table.concat(configs, "\n")
-    end
-end)
-
-loadBtn.MouseButton1Click:Connect(function()
-    local name = saveNameInput.Text
-    if name and name ~= "" then
-        loadConfig(name)
-    end
-end)
-
-configScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- ==================== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ====================
-
-for i, tabName in ipairs(tabs) do
-    tabButtons[tabName].MouseButton1Click:Connect(function()
-        for _, btn in pairs(tabButtons) do
-            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-        end
-        tabButtons[tabName].BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-        
-        for _, scroller in pairs(tabContents) do
-            scroller.Visible = false
-        end
-        tabContents[tabName].Visible = true
-    end)
-end
-
--- ==================== ESP ====================
-
-local espObjects = {}
-
-local function createESP(player)
-    if espObjects[player] then return end
-    if player == LocalPlayer then return end
-    
-    local function onCharacterAdded(char)
-        local head = char:WaitForChild("Head", 5)
-        local humanoid = char:WaitForChild("Humanoid", 5)
-        local root = char:WaitForChild("HumanoidRootPart", 5)
-        
-        if not head or not humanoid or not root then return end
-        
-        local billboard = Instance.new("BillboardGui")
-        billboard.Name = "ESP_"..player.Name
-        billboard.Size = UDim2.new(0, 200, 0, 60)
-        billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-        billboard.AlwaysOnTop = settings.wallhack
-        billboard.Parent = head
-        
-        local text = Instance.new("TextLabel")
-        text.Size = UDim2.new(1, 0, 1, 0)
-        text.BackgroundTransparency = 1
-        text.TextScaled = true
-        text.TextColor3 = Color3.new(1, 1, 1)
-        text.Font = Enum.Font.SourceSansBold
-        text.Parent = billboard
-        
-        if not espObjects[player] then
-            espObjects[player] = {}
-        end
-        
-        table.insert(espObjects[player], {
-            billboard = billboard,
-            text = text,
-            humanoid = humanoid,
-            root = root,
-            char = char
-        })
-    end
-    
-    if player.Character then
-        onCharacterAdded(player.Character)
-    end
-    
-    player.CharacterAdded:Connect(onCharacterAdded)
-end
-
-local function removeESP(player)
-    if espObjects[player] then
-        for _, obj in ipairs(espObjects[player]) do
-            if obj.billboard then
-                obj.billboard:Destroy()
-            end
-        end
-        espObjects[player] = nil
-    end
-end
-
--- Обновление ESP
-RunService.RenderStepped:Connect(function()
-    if not settings.esp then
-        for player, objects in pairs(espObjects) do
-            for _, obj in ipairs(objects) do
-                if obj.billboard then
-                    obj.billboard.Enabled = false
-                end
-            end
-        end
-        return
-    end
-    
-    for player, objects in pairs(espObjects) do
-        for _, obj in ipairs(objects) do
-            if obj.billboard and obj.humanoid and obj.root then
-                obj.billboard.Enabled = true
-                obj.billboard.AlwaysOnTop = settings.wallhack
-                
-                local myChar = LocalPlayer.Character
-                if not myChar then 
-                    obj.text.Text = player.Name
-                    return 
-                end
-                
-                local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-                if not myRoot then 
-                    obj.text.Text = player.Name
-                    return 
-                end
-                
-                local myPos = myRoot.Position
-                local enemyPos = obj.root.Position
-                local distance = (myPos - enemyPos).Magnitude
-                local hp = math.floor(obj.humanoid.Health)
-                
-                local tool = obj.char:FindFirstChildOfClass("Tool")
-                local weapon = tool and tool.Name or "None"
-                
-                local textParts = {}
-                if settings.names then table.insert(textParts, player.Name) end
-                if settings.distance then table.insert(textParts, math.floor(distance).."m") end
-                if settings.health then table.insert(textParts, "❤️"..hp) end
-                table.insert(textParts, "🔫"..weapon)
-                
-                obj.text.Text = table.concat(textParts, " | ")
-                
-                if settings.health then
-                    local healthPercent = obj.humanoid.Health / obj.humanoid.MaxHealth
-                    if healthPercent > 0.6 then
-                        obj.text.TextColor3 = Color3.fromRGB(0, 255, 0)
-                    elseif healthPercent > 0.3 then
-                        obj.text.TextColor3 = Color3.fromRGB(255, 255, 0)
-                    else
-                        obj.text.TextColor3 = Color3.fromRGB(255, 0, 0)
-                    end
-                end
-            end
-        end
-    end
-end)
-
--- ==================== CHINESE HAT ====================
-
-local hat
-
-RunService.RenderStepped:Connect(function()
-
-    if settings.chineseHat then
-
-        local char = LocalPlayer.Character
-        if not char then return end
-
-        local head = char:FindFirstChild("Head")
-        if not head then return end
-
-        if not hat then
-            hat = Instance.new("Part")
-            hat.Name = "RusticHat"
-            hat.Shape = Enum.PartType.Cylinder
-            hat.Size = Vector3.new(6,0.4,6)
-            hat.Color = Color3.fromRGB(255, 170, 0)
-            hat.Material = Enum.Material.Neon
-            hat.CanCollide = false
-            hat.Anchored = true
-            hat.Parent = workspace
-        end
-
-        hat.CFrame =
-            head.CFrame *
-            CFrame.new(0,0.8,0) *
-            CFrame.Angles(0,0,math.rad(90))
-
-    else
-
-        if hat then
-            hat:Destroy()
-            hat = nil
-        end
-
-    end
-end)
--- ==================== JUMP CIRCLE ====================
-
-local jumpCircle
-
-RunService.RenderStepped:Connect(function()
-
-    if not settings.jumpTrail then return end
-
-    local char = LocalPlayer.Character
-    if not char then return end
-
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-
-    if not jumpCircle then
-        jumpCircle = Instance.new("Part")
-        jumpCircle.Shape = Enum.PartType.Cylinder
-        jumpCircle.Size = Vector3.new(6,0.1,6)
-        jumpCircle.Material = Enum.Material.Neon
-        jumpCircle.Color = Color3.fromRGB(255,50,50)
-        jumpCircle.CanCollide = false
-        jumpCircle.Anchored = true
-        jumpCircle.Parent = workspace
-
-        local text = Instance.new("BillboardGui")
-        text.Size = UDim2.new(0,200,0,50)
-        text.AlwaysOnTop = true
-        text.Parent = jumpCircle
-
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1,0,1,0)
-        label.BackgroundTransparency = 1
-        label.Text = "rusticlient"
-        label.TextScaled = true
-        label.TextColor3 = Color3.fromRGB(255,50,50)
-        label.Font = Enum.Font.GothamBold
-        label.Parent = text
-    end
-
-    jumpCircle.CFrame =
-        root.CFrame *
-        CFrame.new(0,-3,0) *
-        CFrame.Angles(0,0,math.rad(90))
-
-end)
--- ==================== RENDER ФУНКЦИИ ====================
-
-local function applyRenderSettings()
-    -- Remove Grass
-    if settings.removeGrass then
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("Terrain") then
-                obj:Clear()
-            end
-        end
-    end
-    
-    -- Remove Foliage
-    if settings.removeFoliage then
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("Part") or obj:IsA("MeshPart") then
-                if obj.Material == Enum.Material.Leaves or obj.Material == Enum.Material.Grass then
-                    obj.Transparency = 1
-                end
-            end
-        end
-    end
-    
-    -- Remove Trees
-    if settings.removeTrees then
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("Part") or obj:IsA("MeshPart") then
-                if obj.Material == Enum.Material.Wood or obj.Name:lower():find("tree") then
-                    obj.Transparency = 1
-                end
-            end
-        end
-    end
-    
-    -- Remove Clouds
-    if settings.removeClouds then
-        if Workspace:FindFirstChild("Clouds") then
-            Workspace.Clouds:Destroy()
-        end
-        Lighting:SetAttribute("CloudsEnabled", false)
-    end
-    
-    -- Remove Fog
-    if settings.removeFog then
-        Lighting.FogStart = 100000
-        Lighting.FogEnd = 100000
-    else
-        Lighting.FogStart = 0
-        Lighting.FogEnd = 80
-        Lighting.FogColor = Color3.fromRGB(100, 100, 100)
-    end
-    
-    -- Remove Effects
-    if settings.removeEffects then
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("ParticleEmitter") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") then
-                obj.Enabled = false
-            end
-        end
-    end
-    
-    -- Remove Blur
-    if settings.removeBlur then
-        for _, effect in pairs(Lighting:GetChildren()) do
-            if effect:IsA("BlurEffect") then
-                effect.Enabled = false
-            end
-        end
-    end
-    
-    -- Remove Transparency
-    if settings.removeTransparency then
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and obj.Transparency > 0 then
-                obj.Transparency = 0
-            end
-        end
-    end
-    
-    -- Potato Graphics
-    if settings.potatoGraphics then
-        Lighting.GlobalShadows = false
-        Lighting.Ambient = Color3.new(0.8, 0.8, 0.8)
-        Lighting.OutdoorAmbient = Color3.new(0.7, 0.7, 0.7)
-        
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") then
-                obj.Material = Enum.Material.Plastic
-                obj.Reflectance = 0
-                obj.CastShadow = false
-            end
-        end
-    else
-        Lighting.GlobalShadows = true
-    end
-    
-    -- Full Bright
-    if settings.fullBright then
-        Lighting.Brightness = 3
-        Lighting.GlobalShadows = false
-        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-    else
-        Lighting.Brightness = 1
-    end
-end
-
--- ==================== SPEED ====================
-
-local function doSpeed()
-    if not settings.speed or not LocalPlayer.Character then return end
-    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-    if not humanoid then return end
-    local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    
-    if humanoid.FloorMaterial then
-        local moveDir = humanoid.MoveDirection
-        if moveDir.Magnitude > 0 then
-            local boost = settings.speedAmount - 16
-            if boost > 0 then
-                root.Velocity = root.Velocity + moveDir * boost
-            end
-        end
-    end
-end
-
--- ==================== GOD MODE ====================
-
-local function doGodMode()
-    if not settings.godMode or not LocalPlayer.Character then return end
-    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-    if not humanoid then return end
-    
-    if humanoid.Health < humanoid.MaxHealth then
-        humanoid.Health = humanoid.MaxHealth
-    end
-end
-
--- ==================== NO FALL ====================
-
-local function doNoFall()
-    if not settings.noFallDamage or not LocalPlayer.Character then return end
-    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-    if not humanoid then return end
-    
-    if humanoid:GetState() == Enum.HumanoidStateType.Freefall then
-        local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if root and root.Velocity.Y < -50 then
-            root.Velocity = Vector3.new(root.Velocity.X, -10, root.Velocity.Z)
-        end
-    end
-end
-
--- ==================== NO JUMP COOLDOWN ====================
-
-local function doNoJumpCD()
-    if not settings.noJumpCooldown or not LocalPlayer.Character then return end
-    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-    if not humanoid then return end
-    
-    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-        if humanoid.FloorMaterial then
-            humanoid.Jump = true
-        end
-    end
-end
-
--- ==================== INFINITE JUMP ====================
-
-local function doInfiniteJump()
-    if not settings.infiniteJump or not LocalPlayer.Character then return end
-    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-    if not humanoid then return end
-    
-    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-        humanoid.Jump = true
-    end
-end
-
--- ==================== NO CLIP ====================
-
-local function doNoClip()
-    if not settings.noClip or not LocalPlayer.Character then return end
-    for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = false
-        end
-    end
-end
-
--- ==================== NO RECOIL / NO SPREAD ====================
-
-local function doNoRecoil()
-    if not settings.noRecoil or not LocalPlayer.Character then return end
-    -- Этот код нужно адаптировать под конкретную игру
-    -- В общем случае для оружия:
-    for _, tool in ipairs(LocalPlayer.Character:GetChildren()) do
-        if tool:IsA("Tool") then
-            -- Здесь можно отключать отдачу
-        end
-    end
-end
-
--- ==================== AIMBOT ====================
-
-local function getTargetPart(player)
-    if not player.Character then return nil end
-    if settings.aimTargetPart == "Head" then
-        return player.Character:FindFirstChild("Head")
-    elseif settings.aimTargetPart == "HumanoidRootPart" then
-        return player.Character:FindFirstChild("HumanoidRootPart")
-    elseif settings.aimTargetPart == "Torso" then
-        return player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("UpperTorso")
-    end
-    return player.Character:FindFirstChild("HumanoidRootPart")
-end
-
-local function isVisible(player, part)
-    if not part or not settings.aimWallCheck then return true end
-    local ray = Ray.new(Camera.CFrame.Position, (part.Position - Camera.CFrame.Position).Unit * 1000)
-    local hit, pos = Workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character, player.Character})
-    return hit == nil or hit:IsDescendantOf(player.Character)
-end
-
-local function getClosestPlayer()
-    local closest = nil
-    local closestPart = nil
-    local closestDist = settings.aimFOV
-    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-    local players = {}
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
-            local humanoid = player.Character.Humanoid
-            if humanoid and humanoid.Health > 0 then
-                if settings.aimTeamCheck and player.Team == LocalPlayer.Team then
-                    continue
-                end
-                
-                local targetPart = getTargetPart(player)
-                if targetPart then
-                    if settings.aimWallCheck and not isVisible(player, targetPart) then
-                        continue
-                    end
-                    
-                    local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
-                    if onScreen then
-                        local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-                        if dist <= closestDist then
-                            table.insert(players, {
-                                player = player,
-                                part = targetPart,
-                                dist = dist,
-                                health = humanoid.Health,
-                                velocity = humanoid.MoveDirection * humanoid.WalkSpeed
-                            })
-                        end
-                    end
-                end
-            end
-        end
-    end
-    
-    if #players == 0 then return nil, nil end
-    
-    if settings.aimTargetType == "Closest" or settings.aimTargetType == "Lowest Dist" then
-        table.sort(players, function(a, b) return a.dist < b.dist end)
-    elseif settings.aimTargetType == "Lowest HP" then
-        table.sort(players, function(a, b) return a.health < b.health end)
-    elseif settings.aimTargetType == "Highest HP" then
-        table.sort(players, function(a, b) return a.health > b.health end)
-    end
-    
-    return players[1].player, players[1].part, players[1]
-end
-
-RunService.RenderStepped:Connect(function()
-    if settings.aimbot then
-        local targetPlayer, targetPart, targetData = getClosestPlayer()
-        if targetPlayer and targetPart then
-            local targetPos = targetPart.Position
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local relativeX = input.Position.X - Slider.AbsolutePosition.X
+            local percentage = math.clamp(relativeX / Slider.AbsoluteSize.X, 0, 1)
+            local value = min + (max - min) * percentage
             
-            if settings.aimPredictMovement and targetData and targetData.velocity then
-                local distance = (targetPos - Camera.CFrame.Position).Magnitude
-                local timeToTarget = distance / 1000
-                targetPos = targetPos + targetData.velocity * timeToTarget * settings.aimPredictAmount
-            end
-            
-            local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPos)
-            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / settings.aimSmooth)
+            SliderBar.Position = UDim2.new(percentage, -5, 0, 0)
+            Label.Text = name .. ": " .. math.floor(value)
+            callback(value)
         end
-    end
-end)
-
--- ==================== SPIN BOT ====================
-
-local spinAngle = 0
-local function doSpin()
-    if not settings.spinBot or not LocalPlayer.Character then return end
-    local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
+    end)
     
-    spinAngle = spinAngle + settings.spinSpeed
-    root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, math.rad(spinAngle), 0)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    return Slider
 end
 
--- ==================== ГЛАВНЫЙ ЦИКЛ ====================
-
-RunService.Heartbeat:Connect(function()
-    doSpeed()
-    doGodMode()
-    doNoFall()
-    doNoJumpCD()
-    doInfiniteJump()
-    doNoClip()
-    doNoRecoil()
-    doSpin()
-    updateChineseHat()
-end)
-
--- ==================== ДЖАМП ТРЕЙЛ ТРИГГЕР ====================
-
-local function onJump(active)
-    if active and settings.jumpTrail then
-        createJumpCircle()
-    end
-end
-
-LocalPlayer.CharacterAdded:Connect(function(char)
-    local humanoid = char:WaitForChild("Humanoid")
-    humanoid.Jumping:Connect(onJump)
-end)
-
-if LocalPlayer.Character then
-    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-    if humanoid then
-        humanoid.Jumping:Connect(onJump)
-    end
-end
-
--- ==================== ОТКРЫТИЕ МЕНЮ ====================
-
-menuButton.MouseButton1Click:Connect(function()
-    menu.Visible = not menu.Visible
-end)
-
--- ==================== ИНИЦИАЛИЗАЦИЯ ====================
-
--- Создаем папку для конфигов
-if not isfile(configFolder) then
-    makefolder(configFolder)
-end
-
-task.wait(2)
-
-for _, player in ipairs(Players:GetPlayers()) do
-    if player ~= LocalPlayer then
-        createESP(player)
-    end
-end
-
-Players.PlayerAdded:Connect(function(player)
-    createESP(player)
-end)
-
-Players.PlayerRemoving:Connect(removeESP)
-
-applyRenderSettings()
-
-StarterGui:SetCore("SendNotification", {
-    Title = "rusticlient v15.0",
-    Text = "Полная версия с конфигами!",
-    Duration = 3
-})
-
-print("✅ rusticlient v15.0 загружен!")
-print("🎨 Снежинки в меню (только ПК)")
-print("💾 Конфиги добавлены!")
+-- Initialize ESP toggles
+createToggle
