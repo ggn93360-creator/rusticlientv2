@@ -1,4 +1,4 @@
--- rusticlient v23.0 - С твоим фоном
+-- rusticlient v24.0 - Полностью рабочая версия
 -- Автор: SWILL / rusticlient
 
 local Players = game:GetService("Players")
@@ -51,6 +51,7 @@ menuButton.Position = UDim2.new(0, 15, 0.5, -35)
 menuButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 menuButton.BackgroundTransparency = 0
 menuButton.Image = "rbxassetid://90064663091843"
+menuButton.Visible = isMobile
 menuButton.Parent = gui
 
 local menuButtonCorner = Instance.new("UICorner")
@@ -62,11 +63,11 @@ menuButtonStroke.Color = Color3.fromRGB(255, 50, 50)
 menuButtonStroke.Thickness = 2
 menuButtonStroke.Parent = menuButton
 
--- ==================== МЕНЮ С ТВОИМ ФОНОМ ====================
+-- ==================== МЕНЮ ====================
 
 local menu = Instance.new("Frame")
-menu.Size = UDim2.new(0, 500, 0, 650)
-menu.Position = UDim2.new(0.5, -250, 0.5, -325)
+menu.Size = UDim2.new(0, 500, 0, 600)
+menu.Position = UDim2.new(0.5, -250, 0.5, -300)
 menu.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 menu.BackgroundTransparency = 0.1
 menu.Visible = false
@@ -78,19 +79,11 @@ local menuCorner = Instance.new("UICorner")
 menuCorner.CornerRadius = UDim.new(0, 15)
 menuCorner.Parent = menu
 
--- ТВОЙ ФОН
-local backgroundImage = Instance.new("ImageLabel")
-backgroundImage.Size = UDim2.new(1, 0, 1, 0)
-backgroundImage.BackgroundTransparency = 1
-backgroundImage.Image = "https://i.imgur.com/lyQdPOx.png"
-backgroundImage.ScaleType = Enum.ScaleType.Crop
-backgroundImage.Parent = menu
-
 -- Заголовок
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 45)
 title.BackgroundTransparency = 1
-title.Text = "RUSTICLIENT v23.0"
+title.Text = "RUSTICLIENT v24.0"
 title.TextColor3 = Color3.fromRGB(255, 100, 100)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
@@ -111,44 +104,6 @@ local infoCorner = Instance.new("UICorner")
 infoCorner.CornerRadius = UDim.new(0, 8)
 infoCorner.Parent = infoLabel
 
--- ==================== СНЕЖИНКИ (ДЛЯ ВСЕХ) ====================
-
-local snowEmitter = Instance.new("Frame")
-snowEmitter.Size = UDim2.new(1, 0, 1, 0)
-snowEmitter.BackgroundTransparency = 1
-snowEmitter.Parent = menu
-
-local snowflakes = {}
-local snowCount = isMobile and 8 or 15
-
-for i = 1, snowCount do
-    local snow = Instance.new("TextLabel")
-    snow.Size = UDim2.new(0, isMobile and 10 or 12, 0, isMobile and 10 or 12)
-    snow.Position = UDim2.new(math.random(), 0, math.random(), 0)
-    snow.BackgroundTransparency = 1
-    snow.Text = "❄️"
-    snow.TextColor3 = Color3.fromRGB(255, 255, 255)
-    snow.TextScaled = true
-    snow.Parent = snowEmitter
-    table.insert(snowflakes, {obj = snow, speed = math.random(2, 5) / 100})
-end
-
-spawn(function()
-    while menu.Parent do
-        wait(0.05)
-        for _, flake in ipairs(snowflakes) do
-            local pos = flake.obj.Position
-            local y = pos.Y.Scale + flake.speed
-            if y > 1 then
-                y = 0
-                flake.obj.Position = UDim2.new(math.random(), 0, 0, 0)
-            else
-                flake.obj.Position = UDim2.new(pos.X.Scale, 0, y, 0)
-            end
-        end
-    end
-end)
-
 -- ==================== ВКЛАДКИ ====================
 
 local tabFrame = Instance.new("Frame")
@@ -157,7 +112,7 @@ tabFrame.Position = UDim2.new(0, 10, 0, 75)
 tabFrame.BackgroundTransparency = 1
 tabFrame.Parent = menu
 
-local tabs = {"AIMBOT", "VISUALS", "MOVEMENT", "PLAYER", "RENDER", "CONFIGS"}
+local tabs = {"ESP", "AIMBOT", "MOVEMENT", "PLAYER", "RENDER", "CONFIGS"}
 local tabButtons = {}
 local tabContents = {}
 
@@ -183,7 +138,6 @@ local contentFrame = Instance.new("Frame")
 contentFrame.Size = UDim2.new(1, -20, 1, -130)
 contentFrame.Position = UDim2.new(0, 10, 0, 120)
 contentFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-contentFrame.BackgroundTransparency = 0.2
 contentFrame.Parent = menu
 
 local contentCorner = Instance.new("UICorner")
@@ -200,7 +154,7 @@ for _, tabName in ipairs(tabs) do
     scroller.ScrollBarThickness = 6
     scroller.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 50)
     scroller.CanvasSize = UDim2.new(0, 0, 0, 600)
-    scroller.Visible = (tabName == "AIMBOT")
+    scroller.Visible = (tabName == "ESP")
     scroller.Parent = contentFrame
     tabContents[tabName] = scroller
 end
@@ -208,6 +162,16 @@ end
 -- ==================== НАСТРОЙКИ ====================
 
 local Settings = {
+    ESP = {
+        Enabled = false,
+        Box = true,
+        Name = true,
+        Health = true,
+        Distance = true,
+        Wallhack = true,
+        BoxColor = Color3.new(1, 0, 0),
+        NameColor = Color3.new(1, 1, 1)
+    },
     Aimbot = {
         Enabled = false,
         FOV = 200,
@@ -218,14 +182,6 @@ local Settings = {
         TargetPart = "Head",
         FOVColor = Color3.new(1, 0, 0)
     },
-    Visuals = {
-        Enabled = false,
-        Box = true,
-        Name = true,
-        Health = true,
-        Distance = true,
-        Wallhack = true
-    },
     Movement = {
         Speed = false,
         SpeedAmount = 32,
@@ -235,9 +191,7 @@ local Settings = {
         NoClip = false
     },
     Player = {
-        GodMode = false,
-        ChineseHat = false,
-        JumpTrail = false
+        GodMode = false
     },
     Render = {
         RemoveGrass = false,
@@ -246,196 +200,6 @@ local Settings = {
         PotatoGraphics = false
     }
 }
-
--- ==================== ТВОЙ ESP КОД ====================
-
-local espObjects = {}
-
-local function createESP(player)
-    if espObjects[player] then return end
-    if player == LocalPlayer then return end
-    
-    local function onCharacterAdded(char)
-        local head = char:WaitForChild("Head")
-        local humanoid = char:WaitForChild("Humanoid")
-        
-        if not head or not humanoid then return end
-        
-        local billboard = Instance.new("BillboardGui")
-        billboard.Name = "ESP_"..player.Name
-        billboard.Size = UDim2.new(0, 150, 0, 60)
-        billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-        billboard.AlwaysOnTop = Settings.Visuals.Wallhack
-        billboard.Parent = head
-        
-        local nameLabel = Instance.new("TextLabel")
-        nameLabel.Size = UDim2.new(1, 0, 0.4, 0)
-        nameLabel.BackgroundTransparency = 1
-        nameLabel.TextColor3 = Color3.new(1, 1, 1)
-        nameLabel.TextScaled = true
-        nameLabel.Text = player.Name
-        nameLabel.Parent = billboard
-        
-        local distanceLabel = Instance.new("TextLabel")
-        distanceLabel.Size = UDim2.new(1, 0, 0.3, 0)
-        distanceLabel.Position = UDim2.new(0, 0, 0.4, 0)
-        distanceLabel.BackgroundTransparency = 1
-        distanceLabel.TextColor3 = Color3.new(0.8, 0.8, 0.8)
-        distanceLabel.TextScaled = true
-        distanceLabel.Parent = billboard
-        
-        local hpBarBG = Instance.new("Frame")
-        hpBarBG.Size = UDim2.new(1, 0, 0.3, 0)
-        hpBarBG.Position = UDim2.new(0, 0, 0.7, 0)
-        hpBarBG.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        hpBarBG.Parent = billboard
-        
-        local hpBar = Instance.new("Frame")
-        hpBar.Size = UDim2.new(1, 0, 1, 0)
-        hpBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        hpBar.Parent = hpBarBG
-        
-        espObjects[player] = {
-            billboard = billboard,
-            nameLabel = nameLabel,
-            distanceLabel = distanceLabel,
-            hpBarBG = hpBarBG,
-            hpBar = hpBar,
-            char = char,
-            humanoid = humanoid
-        }
-    end
-    
-    if player.Character then
-        onCharacterAdded(player.Character)
-    end
-    
-    player.CharacterAdded:Connect(onCharacterAdded)
-end
-
--- Обновление ESP
-RunService.RenderStepped:Connect(function()
-    if not Settings.Visuals.Enabled then
-        for player, obj in pairs(espObjects) do
-            if obj.billboard then
-                obj.billboard.Enabled = false
-            end
-        end
-        return
-    end
-    
-    for player, obj in pairs(espObjects) do
-        if obj.billboard and obj.char and obj.humanoid then
-            obj.billboard.Enabled = true
-            obj.billboard.AlwaysOnTop = Settings.Visuals.Wallhack
-            obj.nameLabel.Visible = Settings.Visuals.Name
-            obj.distanceLabel.Visible = Settings.Visuals.Distance
-            obj.hpBarBG.Visible = Settings.Visuals.Health
-            
-            local charLocal = LocalPlayer.Character
-            if charLocal then
-                local rootLocal = charLocal:FindFirstChild("HumanoidRootPart")
-                local rootTarget = obj.char:FindFirstChild("HumanoidRootPart")
-                
-                if rootLocal and rootTarget then
-                    local dist = (rootLocal.Position - rootTarget.Position).Magnitude
-                    obj.distanceLabel.Text = "Distance: " .. math.floor(dist)
-                end
-            end
-            
-            local hp = obj.humanoid.Health / obj.humanoid.MaxHealth
-            obj.hpBar.Size = UDim2.new(hp, 0, 1, 0)
-            
-            -- Цвет полоски здоровья
-            if hp > 0.6 then
-                obj.hpBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-            elseif hp > 0.3 then
-                obj.hpBar.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
-            else
-                obj.hpBar.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-            end
-        end
-    end
-end)
-
--- ==================== AIMBOT FOV КРУГ ====================
-
-local fovCircle = Instance.new("Frame")
-fovCircle.Size = UDim2.new(0, Settings.Aimbot.FOV * 2, 0, Settings.Aimbot.FOV * 2)
-fovCircle.Position = UDim2.new(0.5, -Settings.Aimbot.FOV, 0.5, -Settings.Aimbot.FOV)
-fovCircle.BackgroundTransparency = 1
-fovCircle.BorderColor3 = Settings.Aimbot.FOVColor
-fovCircle.BorderSizePixel = 2
-fovCircle.Visible = Settings.Aimbot.ShowFOV
-fovCircle.Parent = gui
-
-local fovCircleCorner = Instance.new("UICorner")
-fovCircleCorner.CornerRadius = UDim.new(1, 0)
-fovCircleCorner.Parent = fovCircle
-
--- ==================== AIMBOT ====================
-
-local function getTargetPart(player)
-    if not player.Character then return nil end
-    if Settings.Aimbot.TargetPart == "Head" then
-        return player.Character:FindFirstChild("Head")
-    else
-        return player.Character:FindFirstChild("HumanoidRootPart")
-    end
-end
-
-local function getClosestPlayer()
-    local closest = nil
-    local closestPart = nil
-    local closestDist = Settings.Aimbot.FOV
-    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
-            local humanoid = player.Character.Humanoid
-            if humanoid and humanoid.Health > 0 then
-                if Settings.Aimbot.TeamCheck and player.Team == LocalPlayer.Team then
-                    continue
-                end
-                
-                local targetPart = getTargetPart(player)
-                if targetPart then
-                    local pos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
-                    if onScreen then
-                        local dist = (Vector2.new(pos.X, pos.Y) - center).Magnitude
-                        if dist < closestDist then
-                            closestDist = dist
-                            closest = targetPart
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return closest
-end
-
-RunService.RenderStepped:Connect(function()
-    -- Обновление FOV круга
-    fovCircle.Visible = Settings.Aimbot.ShowFOV
-    fovCircle.Size = UDim2.new(0, Settings.Aimbot.FOV * 2, 0, Settings.Aimbot.FOV * 2)
-    fovCircle.Position = UDim2.new(0.5, -Settings.Aimbot.FOV, 0.5, -Settings.Aimbot.FOV)
-    fovCircle.BorderColor3 = Settings.Aimbot.FOVColor
-    
-    -- Aimbot
-    if Settings.Aimbot.Enabled then
-        local target = getClosestPlayer()
-        if target then
-            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, target.Position), 1 / Settings.Aimbot.Smooth)
-            
-            if Settings.Aimbot.AutoFire then
-                mouse1press()
-                wait(0.01)
-                mouse1release()
-            end
-        end
-    end
-end)
 
 -- ==================== ФУНКЦИИ ДЛЯ ПЕРЕКЛЮЧАТЕЛЕЙ ====================
 
@@ -572,97 +336,225 @@ local function createSlider(parent, name, yPos, category, setting, min, max, suf
     return bg
 end
 
--- ==================== КИТАЙСКАЯ ШЛЯПА ====================
+-- ==================== ESP (ТВОЙ КОД) ====================
 
-local hat = nil
+local espObjects = {}
 
-RunService.RenderStepped:Connect(function()
-    if Settings.Player.ChineseHat then
-        local char = LocalPlayer.Character
-        if not char then return end
+local function createESP(player)
+    if espObjects[player] then return end
+    if player == LocalPlayer then return end
+    
+    local function onCharacterAdded(char)
+        local head = char:WaitForChild("Head")
+        local humanoid = char:WaitForChild("Humanoid")
         
-        local head = char:FindFirstChild("Head")
-        if not head then return end
+        if not head or not humanoid then return end
         
-        if not hat then
-            hat = Instance.new("Part")
-            hat.Name = "RusticHat"
-            hat.Shape = Enum.PartType.Cylinder
-            hat.Size = Vector3.new(6, 0.4, 6)
-            hat.Color = Color3.fromRGB(255, 170, 0)
-            hat.Material = Enum.Material.Neon
-            hat.CanCollide = false
-            hat.Anchored = true
-            hat.Parent = workspace
-        end
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "ESP_"..player.Name
+        billboard.Size = UDim2.new(0, 150, 0, 60)
+        billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+        billboard.AlwaysOnTop = Settings.ESP.Wallhack
+        billboard.Parent = head
         
-        hat.CFrame = head.CFrame * CFrame.new(0, 0.8, 0) * CFrame.Angles(0, 0, math.rad(90))
-    else
-        if hat then
-            hat:Destroy()
-            hat = nil
-        end
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Size = UDim2.new(1, 0, 0.4, 0)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.TextColor3 = Settings.ESP.NameColor
+        nameLabel.TextScaled = true
+        nameLabel.Text = player.Name
+        nameLabel.Parent = billboard
+        
+        local distanceLabel = Instance.new("TextLabel")
+        distanceLabel.Size = UDim2.new(1, 0, 0.3, 0)
+        distanceLabel.Position = UDim2.new(0, 0, 0.4, 0)
+        distanceLabel.BackgroundTransparency = 1
+        distanceLabel.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+        distanceLabel.TextScaled = true
+        distanceLabel.Parent = billboard
+        
+        local hpBarBG = Instance.new("Frame")
+        hpBarBG.Size = UDim2.new(1, 0, 0.3, 0)
+        hpBarBG.Position = UDim2.new(0, 0, 0.7, 0)
+        hpBarBG.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        hpBarBG.Parent = billboard
+        
+        local hpBar = Instance.new("Frame")
+        hpBar.Size = UDim2.new(1, 0, 1, 0)
+        hpBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        hpBar.Parent = hpBarBG
+        
+        espObjects[player] = {
+            billboard = billboard,
+            nameLabel = nameLabel,
+            distanceLabel = distanceLabel,
+            hpBarBG = hpBarBG,
+            hpBar = hpBar,
+            char = char,
+            humanoid = humanoid
+        }
     end
-end)
+    
+    if player.Character then
+        onCharacterAdded(player.Character)
+    end
+    
+    player.CharacterAdded:Connect(onCharacterAdded)
+end
 
--- ==================== ДЖАМП ТРЕЙЛ ====================
-
-local jumpCircle = nil
-
+-- Обновление ESP
 RunService.RenderStepped:Connect(function()
-    if not Settings.Player.JumpTrail then
-        if jumpCircle then
-            jumpCircle:Destroy()
-            jumpCircle = nil
+    if not Settings.ESP.Enabled then
+        for player, obj in pairs(espObjects) do
+            if obj.billboard then
+                obj.billboard.Enabled = false
+            end
         end
         return
     end
-
-    local char = LocalPlayer.Character
-    if not char then return end
-
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-
-    if not jumpCircle then
-        jumpCircle = Instance.new("Part")
-        jumpCircle.Name = "RusticJumpCircle"
-        jumpCircle.Shape = Enum.PartType.Cylinder
-        jumpCircle.Size = Vector3.new(6, 0.1, 6)
-        jumpCircle.Material = Enum.Material.Neon
-        jumpCircle.Color = Color3.fromRGB(255, 50, 50)
-        jumpCircle.CanCollide = false
-        jumpCircle.Anchored = true
-        jumpCircle.Parent = workspace
-
-        local text = Instance.new("BillboardGui")
-        text.Size = UDim2.new(0, 200, 0, 50)
-        text.AlwaysOnTop = true
-        text.Parent = jumpCircle
-
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, 0, 1, 0)
-        label.BackgroundTransparency = 1
-        label.Text = "rusticlient"
-        label.TextScaled = true
-        label.TextColor3 = Color3.fromRGB(255, 50, 50)
-        label.Font = Enum.Font.GothamBold
-        label.Parent = text
+    
+    for player, obj in pairs(espObjects) do
+        if obj.billboard and obj.char and obj.humanoid then
+            obj.billboard.Enabled = true
+            obj.billboard.AlwaysOnTop = Settings.ESP.Wallhack
+            obj.nameLabel.Visible = Settings.ESP.Name
+            obj.nameLabel.TextColor3 = Settings.ESP.NameColor
+            obj.distanceLabel.Visible = Settings.ESP.Distance
+            obj.hpBarBG.Visible = Settings.ESP.Health
+            
+            local charLocal = LocalPlayer.Character
+            if charLocal then
+                local rootLocal = charLocal:FindFirstChild("HumanoidRootPart")
+                local rootTarget = obj.char:FindFirstChild("HumanoidRootPart")
+                
+                if rootLocal and rootTarget then
+                    local dist = (rootLocal.Position - rootTarget.Position).Magnitude
+                    obj.distanceLabel.Text = "Distance: " .. math.floor(dist)
+                end
+            end
+            
+            local hp = obj.humanoid.Health / obj.humanoid.MaxHealth
+            obj.hpBar.Size = UDim2.new(hp, 0, 1, 0)
+            
+            -- Цвет полоски здоровья
+            if hp > 0.6 then
+                obj.hpBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            elseif hp > 0.3 then
+                obj.hpBar.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+            else
+                obj.hpBar.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+            end
+        end
     end
-
-    jumpCircle.CFrame = root.CFrame * CFrame.new(0, -3, 0) * CFrame.Angles(0, 0, math.rad(90))
 end)
 
--- ==================== ДВИЖЕНИЕ ====================
+-- ==================== AIMBOT FOV КРУГ ====================
+
+local fovCircle = Instance.new("Frame")
+fovCircle.Size = UDim2.new(0, Settings.Aimbot.FOV * 2, 0, Settings.Aimbot.FOV * 2)
+fovCircle.Position = UDim2.new(0.5, -Settings.Aimbot.FOV, 0.5, -Settings.Aimbot.FOV)
+fovCircle.BackgroundTransparency = 1
+fovCircle.BorderColor3 = Settings.Aimbot.FOVColor
+fovCircle.BorderSizePixel = 2
+fovCircle.Visible = Settings.Aimbot.ShowFOV
+fovCircle.Parent = gui
+
+local fovCircleCorner = Instance.new("UICorner")
+fovCircleCorner.CornerRadius = UDim.new(1, 0)
+fovCircleCorner.Parent = fovCircle
+
+-- ==================== AIMBOT ====================
+
+local function getTargetPart(player)
+    if not player.Character then return nil end
+    if Settings.Aimbot.TargetPart == "Head" then
+        return player.Character:FindFirstChild("Head")
+    else
+        return player.Character:FindFirstChild("HumanoidRootPart")
+    end
+end
+
+local function getClosestPlayer()
+    local closest = nil
+    local closestPart = nil
+    local closestDist = Settings.Aimbot.FOV
+    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+            local humanoid = player.Character.Humanoid
+            if humanoid and humanoid.Health > 0 then
+                if Settings.Aimbot.TeamCheck and player.Team == LocalPlayer.Team then
+                    continue
+                end
+                
+                local targetPart = getTargetPart(player)
+                if targetPart then
+                    local pos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+                    if onScreen then
+                        local dist = (Vector2.new(pos.X, pos.Y) - center).Magnitude
+                        if dist < closestDist then
+                            closestDist = dist
+                            closest = targetPart
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return closest
+end
+
+RunService.RenderStepped:Connect(function()
+    -- Обновление FOV круга
+    fovCircle.Visible = Settings.Aimbot.ShowFOV
+    fovCircle.Size = UDim2.new(0, Settings.Aimbot.FOV * 2, 0, Settings.Aimbot.FOV * 2)
+    fovCircle.Position = UDim2.new(0.5, -Settings.Aimbot.FOV, 0.5, -Settings.Aimbot.FOV)
+    fovCircle.BorderColor3 = Settings.Aimbot.FOVColor
+    
+    -- Aimbot
+    if Settings.Aimbot.Enabled then
+        local target = getClosestPlayer()
+        if target then
+            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, target.Position), 1 / Settings.Aimbot.Smooth)
+            
+            if Settings.Aimbot.AutoFire then
+                mouse1press()
+                wait(0.01)
+                mouse1release()
+            end
+        end
+    end
+end)
+
+-- ==================== SPEED HACK (ТОЛЬКО ПО ЗАЖАТИЮ CTRL) ====================
+
+local speedActive = false
+
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        speedActive = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        speedActive = false
+    end
+end)
 
 local function doSpeed()
-    if not Settings.Movement.Speed or not LocalPlayer.Character then return end
+    if not Settings.Movement.Speed or not speedActive or not LocalPlayer.Character then return end
     local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
     local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if humanoid and root and humanoid.MoveDirection.Magnitude > 0 then
         root.Velocity = root.Velocity + humanoid.MoveDirection * (Settings.Movement.SpeedAmount - 16)
     end
 end
+
+-- ==================== NO FALL ====================
 
 local function doNoFall()
     if not Settings.Movement.NoFall or not LocalPlayer.Character then return end
@@ -675,6 +567,8 @@ local function doNoFall()
     end
 end
 
+-- ==================== NO JUMP CD ====================
+
 local function doNoJumpCD()
     if not Settings.Movement.NoJumpCD or not LocalPlayer.Character then return end
     local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
@@ -683,6 +577,8 @@ local function doNoJumpCD()
     end
 end
 
+-- ==================== INFINITE JUMP ====================
+
 local function doInfiniteJump()
     if not Settings.Movement.InfiniteJump or not LocalPlayer.Character then return end
     local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
@@ -690,6 +586,8 @@ local function doInfiniteJump()
         humanoid.Jump = true
     end
 end
+
+-- ==================== NO CLIP ====================
 
 local function doNoClip()
     if not Settings.Movement.NoClip or not LocalPlayer.Character then return end
@@ -756,9 +654,20 @@ end
 
 -- ==================== ЗАПОЛНЯЕМ ВКЛАДКИ ====================
 
+-- ESP вкладка
+local espScroller = tabContents["ESP"]
+local y = 5
+createToggle(espScroller, "ESP", y, "ESP", "Enabled"); y = y + 40
+createToggle(espScroller, "Box", y, "ESP", "Box"); y = y + 40
+createToggle(espScroller, "Name", y, "ESP", "Name"); y = y + 40
+createToggle(espScroller, "Health", y, "ESP", "Health"); y = y + 40
+createToggle(espScroller, "Distance", y, "ESP", "Distance"); y = y + 40
+createToggle(espScroller, "Wallhack", y, "ESP", "Wallhack"); y = y + 40
+espScroller.CanvasSize = UDim2.new(0, 0, 0, y)
+
 -- AIMBOT вкладка
 local aimScroller = tabContents["AIMBOT"]
-local y = 5
+y = 5
 createToggle(aimScroller, "Aimbot", y, "Aimbot", "Enabled"); y = y + 40
 createSlider(aimScroller, "FOV", y, "Aimbot", "FOV", 50, 500, ""); y = y + 50
 createSlider(aimScroller, "Smooth", y, "Aimbot", "Smooth", 1, 20, ""); y = y + 50
@@ -767,20 +676,10 @@ createToggle(aimScroller, "Team Check", y, "Aimbot", "TeamCheck"); y = y + 40
 createToggle(aimScroller, "Show FOV", y, "Aimbot", "ShowFOV"); y = y + 40
 aimScroller.CanvasSize = UDim2.new(0, 0, 0, y)
 
--- VISUALS вкладка
-local visScroller = tabContents["VISUALS"]
-y = 5
-createToggle(visScroller, "ESP", y, "Visuals", "Enabled"); y = y + 40
-createToggle(visScroller, "Name Tags", y, "Visuals", "Name"); y = y + 40
-createToggle(visScroller, "Distance", y, "Visuals", "Distance"); y = y + 40
-createToggle(visScroller, "Health Bars", y, "Visuals", "Health"); y = y + 40
-createToggle(visScroller, "Wallhack", y, "Visuals", "Wallhack"); y = y + 40
-visScroller.CanvasSize = UDim2.new(0, 0, 0, y)
-
 -- MOVEMENT вкладка
 local moveScroller = tabContents["MOVEMENT"]
 y = 5
-createToggle(moveScroller, "Speed", y, "Movement", "Speed"); y = y + 40
+createToggle(moveScroller, "Speed (Hold CTRL)", y, "Movement", "Speed"); y = y + 40
 createSlider(moveScroller, "Speed Amount", y, "Movement", "SpeedAmount", 16, 100, ""); y = y + 50
 createToggle(moveScroller, "No Fall", y, "Movement", "NoFall"); y = y + 40
 createToggle(moveScroller, "No Jump CD", y, "Movement", "NoJumpCD"); y = y + 40
@@ -792,8 +691,6 @@ moveScroller.CanvasSize = UDim2.new(0, 0, 0, y)
 local playerScroller = tabContents["PLAYER"]
 y = 5
 createToggle(playerScroller, "God Mode", y, "Player", "GodMode"); y = y + 40
-createToggle(playerScroller, "Chinese Hat", y, "Player", "ChineseHat"); y = y + 40
-createToggle(playerScroller, "Jump Trail", y, "Player", "JumpTrail"); y = y + 40
 playerScroller.CanvasSize = UDim2.new(0, 0, 0, y)
 
 -- RENDER вкладка
@@ -949,9 +846,18 @@ end)
 
 -- ==================== ОТКРЫТИЕ МЕНЮ ====================
 
-menuButton.MouseButton1Click:Connect(function()
-    menu.Visible = not menu.Visible
-end)
+if isMobile then
+    menuButton.MouseButton1Click:Connect(function()
+        menu.Visible = not menu.Visible
+    end)
+else
+    UserInputService.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.KeyCode == Enum.KeyCode.RightShift then
+            menu.Visible = not menu.Visible
+        end
+    end)
+end
 
 -- ==================== ИНИЦИАЛИЗАЦИЯ ====================
 
@@ -966,15 +872,13 @@ end
 Players.PlayerAdded:Connect(createESP)
 
 StarterGui:SetCore("SendNotification", {
-    Title = "rusticlient v23.0",
-    Text = "Your ESP + Your Background!",
+    Title = "rusticlient v24.0",
+    Text = "Working version - No extra stuff!",
     Duration = 3
 })
 
-print("✅ rusticlient v23.0 загружен!")
-print("🖼️ Твой фон добавлен!")
-print("🎯 Твой ESP работает!")
-print("🎩 Китайская шляпа работает!")
-print("🔄 Jump Trail работает!")
-print("❄️ Снежинки для всех!")
-print("💾 Конфиги работают!")
+print("✅ rusticlient v24.0 загружен!")
+print("📌 ESP - РАБОТАЕТ!")
+print("📌 Speed - РАБОТАЕТ (зажми CTRL)!")
+print("📌 Aimbot - РАБОТАЕТ!")
+print("📌 Конфиги - РАБОТАЮТ!")
