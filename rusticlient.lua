@@ -1,6 +1,3 @@
--- ESP + Speed + High Jump - 100% РАБОТАЕТ
--- Автор: SWILL
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -500,6 +497,4 @@ StarterGui:SetCore("SendNotification", {
     Duration = 3
 })
 
-print("✅ ESP + Speed + Jump загружен!")
-print("ПК: Правый Shift для меню")
-print("Speed и Jump работают постоянно при включении")
+print("✅rusticlient загружен!")
