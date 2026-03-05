@@ -1,3 +1,6 @@
+-- rusticlient - ESP + Speed + High Jump
+-- Автор: SWILL / rusticlient
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -20,13 +23,13 @@ end
 
 -- Очищаем старые гуи
 for _, v in ipairs(CoreGui:GetChildren()) do
-    if v.Name == "ESPGui" then
+    if v.Name == "rusticlient" or v.Name == "ESPGui" then
         v:Destroy()
     end
 end
 
 local gui = Instance.new("ScreenGui")
-gui.Name = "ESPGui"
+gui.Name = "rusticlient"
 gui.ResetOnSpawn = false
 gui.Parent = CoreGui
 
@@ -65,7 +68,7 @@ menuCorner.Parent = menu
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
-title.Text = "ESP + SPEED + JUMP"
+title.Text = "rusticlient v1.0"
 title.TextColor3 = Color3.fromRGB(255, 100, 100)
 title.TextScaled = true
 title.Font = Enum.Font.SourceSansBold
@@ -353,7 +356,7 @@ RunService.RenderStepped:Connect(function()
                     end
                     
                     local esp = espObjects[player]
-                    if esp then
+                    if esp and esp.billboard then
                         -- Обновляем видимость
                         esp.billboard.AlwaysOnTop = settings.wallhack
                         esp.box.Visible = settings.boxes
@@ -363,10 +366,16 @@ RunService.RenderStepped:Connect(function()
                         
                         -- Обновляем здоровье
                         local healthPercent = humanoid.Health / humanoid.MaxHealth
-                        esp.box.BorderColor3 = Color3.new(1 - healthPercent, healthPercent, 0)
-                        esp.healthBar.Size = UDim2.new(healthPercent, 0, 1, 0)
-                        esp.healthBar.BackgroundColor3 = Color3.new(1 - healthPercent, healthPercent, 0)
-                        esp.healthText.Text = math.floor(humanoid.Health) .. "/" .. math.floor(humanoid.MaxHealth) .. " HP"
+                        if esp.box then
+                            esp.box.BorderColor3 = Color3.new(1 - healthPercent, healthPercent, 0)
+                        end
+                        if esp.healthBar then
+                            esp.healthBar.Size = UDim2.new(healthPercent, 0, 1, 0)
+                            esp.healthBar.BackgroundColor3 = Color3.new(1 - healthPercent, healthPercent, 0)
+                        end
+                        if esp.healthText then
+                            esp.healthText.Text = math.floor(humanoid.Health) .. "/" .. math.floor(humanoid.MaxHealth) .. " HP"
+                        end
                     end
                 else
                     removeESP(player)
@@ -473,16 +482,22 @@ end
 
 -- ==================== ИНИЦИАЛИЗАЦИЯ ====================
 
-task.wait(1)
+-- Даем время на загрузку
+task.wait(2)
+
+-- Создаем ESP для существующих игроков
 for _, player in ipairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then
-        createESP(player)
+        task.spawn(function()
+            createESP(player)
+        end)
     end
 end
 
+-- Обработка новых игроков
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function()
-        task.wait(1)
+        task.wait(1.5)
         if settings.esp then
             createESP(player)
         end
@@ -491,10 +506,12 @@ end)
 
 Players.PlayerRemoving:Connect(removeESP)
 
+-- Уведомление о загрузке
 StarterGui:SetCore("SendNotification", {
-    Title = "ESP + Speed + Jump загружен",
-    Text = "ПК: Правый Shift | Телефон: кнопка",
-    Duration = 3
+    Title = "rusticlient v1.0",
+    Text = "Загружен! ПК: Правый Shift | Телефон: кнопка",
+    Duration = 5
 })
 
-print("✅rusticlient загружен!")
+print("✅ rusticlient v1.0 загружен!")
+print("📌 Автор: SWILL / rusticlient")
