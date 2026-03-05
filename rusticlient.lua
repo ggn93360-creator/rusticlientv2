@@ -1,4 +1,4 @@
--- rusticlient - ESP + Speed + High Jump
+-- rusticlient v2.0 - ESP + Speed + High Jump + Настраиваемый Aimbot
 -- Автор: SWILL / rusticlient
 
 local Players = game:GetService("Players")
@@ -51,8 +51,8 @@ buttonCorner.Parent = menuButton
 -- ==================== МЕНЮ ====================
 
 local menu = Instance.new("Frame")
-menu.Size = UDim2.new(0, 300, 0, 450)
-menu.Position = UDim2.new(0.5, -150, 0.5, -225)
+menu.Size = UDim2.new(0, 350, 0, 550)
+menu.Position = UDim2.new(0.5, -175, 0.5, -275)
 menu.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 menu.BackgroundTransparency = 0.1
 menu.Visible = false
@@ -68,7 +68,7 @@ menuCorner.Parent = menu
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
-title.Text = "rusticlient v1.0"
+title.Text = "rusticlient v2.0"
 title.TextColor3 = Color3.fromRGB(255, 100, 100)
 title.TextScaled = true
 title.Font = Enum.Font.SourceSansBold
@@ -79,47 +79,99 @@ local infoLabel = Instance.new("TextLabel")
 infoLabel.Size = UDim2.new(1, 0, 0, 25)
 infoLabel.Position = UDim2.new(0, 0, 0, 40)
 infoLabel.BackgroundTransparency = 1
-infoLabel.Text = "Device: " .. (isMobile and "Mobile" or "PC")
+infoLabel.Text = "Device: " .. (isMobile and "Mobile" or "PC") .. " | " .. injectorType
 infoLabel.TextColor3 = Color3.fromRGB(150, 150, 255)
 infoLabel.TextScaled = true
 infoLabel.Font = Enum.Font.SourceSans
 infoLabel.Parent = menu
 
--- СКОЛЛЕР
-local scroller = Instance.new("ScrollingFrame")
-scroller.Size = UDim2.new(1, -20, 1, -80)
-scroller.Position = UDim2.new(0, 10, 0, 70)
-scroller.BackgroundTransparency = 1
-scroller.BorderSizePixel = 0
-scroller.ScrollBarThickness = 6
-scroller.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
-scroller.CanvasSize = UDim2.new(0, 0, 0, 400)
-scroller.Parent = menu
+-- ВКЛАДКИ
+local tabFrame = Instance.new("Frame")
+tabFrame.Size = UDim2.new(1, -20, 0, 30)
+tabFrame.Position = UDim2.new(0, 10, 0, 70)
+tabFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+tabFrame.BorderSizePixel = 0
+tabFrame.Parent = menu
+
+local tabButtons = {}
+local tabContents = {}
+local tabs = {"ESP", "AIMBOT", "MOVEMENT", "SETTINGS"}
+
+for i, tabName in ipairs(tabs) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.25, -2, 1, -4)
+    btn.Position = UDim2.new((i-1)*0.25, 2, 0, 2)
+    btn.BackgroundColor3 = i == 1 and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(40, 40, 50)
+    btn.Text = tabName
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextScaled = true
+    btn.Font = Enum.Font.SourceSansBold
+    btn.Parent = tabFrame
+    tabButtons[tabName] = btn
+end
+
+-- КОНТЕЙНЕР ДЛЯ КОНТЕНТА
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, -20, 1, -140)
+contentFrame.Position = UDim2.new(0, 10, 0, 105)
+contentFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+contentFrame.BorderSizePixel = 0
+contentFrame.Parent = menu
+
+-- СКОЛЛЕРЫ ДЛЯ КАЖДОЙ ВКЛАДКИ
+for _, tabName in ipairs(tabs) do
+    local scroller = Instance.new("ScrollingFrame")
+    scroller.Name = tabName .. "Scroller"
+    scroller.Size = UDim2.new(1, -10, 1, -10)
+    scroller.Position = UDim2.new(0, 5, 0, 5)
+    scroller.BackgroundTransparency = 1
+    scroller.BorderSizePixel = 0
+    scroller.ScrollBarThickness = 6
+    scroller.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 50)
+    scroller.CanvasSize = UDim2.new(0, 0, 0, 400)
+    scroller.Visible = (tabName == "ESP")
+    scroller.Parent = contentFrame
+    tabContents[tabName] = scroller
+end
 
 -- ==================== НАСТРОЙКИ ====================
 
 local settings = {
+    -- ESP
     esp = false,
     boxes = false,
     names = false,
     health = false,
     wallhack = false,
+    
+    -- Aimbot
+    aimbot = false,
+    aimFOV = 200,
+    aimSmooth = 5,
+    aimTeamCheck = false,
+    aimWallCheck = true,
+    aimTargetPart = "Head", -- Head, HumanoidRootPart, Torso
+    aimTargetType = "Closest", -- Closest, LowestHP, HighestHP, LowestDist
+    
+    -- Movement
     speed = false,
     speedAmount = 32,
     jump = false,
     jumpPower = 50,
-    aimbot = false,
-    aimFOV = 200
+    
+    -- Settings
+    menuKey = Enum.KeyCode.RightShift
 }
 
--- Функция создания переключателя
-local function createToggle(name, yPos, setting)
+-- ==================== ФУНКЦИИ СОЗДАНИЯ ЭЛЕМЕНТОВ ====================
+
+local function createToggle(parent, name, yPos, setting, callback)
     local bg = Instance.new("Frame")
     bg.Size = UDim2.new(0.9, 0, 0, 35)
     bg.Position = UDim2.new(0.05, 0, 0, yPos)
     bg.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     bg.BorderSizePixel = 0
-    bg.Parent = scroller
+    bg.Parent = parent
     
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.6, -5, 1, 0)
@@ -146,19 +198,19 @@ local function createToggle(name, yPos, setting)
         settings[setting] = not settings[setting]
         toggle.BackgroundColor3 = settings[setting] and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
         toggle.Text = settings[setting] and "ON" or "OFF"
+        if callback then callback(settings[setting]) end
     end)
     
     return bg
 end
 
--- Функция создания слайдера
-local function createSlider(name, yPos, min, max, setting, suffix)
+local function createSlider(parent, name, yPos, min, max, setting, suffix, callback)
     local bg = Instance.new("Frame")
     bg.Size = UDim2.new(0.9, 0, 0, 50)
     bg.Position = UDim2.new(0.05, 0, 0, yPos)
     bg.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     bg.BorderSizePixel = 0
-    bg.Parent = scroller
+    bg.Parent = parent
     
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.5, -5, 0.4, 0)
@@ -201,6 +253,7 @@ local function createSlider(name, yPos, min, max, setting, suffix)
         settings[setting] = min + (max - min) * percent
         slider.Size = UDim2.new(percent, 0, 1, 0)
         valueLabel.Text = math.floor(settings[setting]) .. suffix
+        if callback then callback(settings[setting]) end
     end
     
     sliderBg.InputBegan:Connect(function(input)
@@ -218,21 +271,132 @@ local function createSlider(name, yPos, min, max, setting, suffix)
     return bg
 end
 
--- Создаем элементы
-local y = 5
-createToggle("ESP Enabled", y, "esp"); y = y + 40
-createToggle("3D Boxes", y, "boxes"); y = y + 40
-createToggle("Name Tags", y, "names"); y = y + 40
-createToggle("Health Bars", y, "health"); y = y + 40
-createToggle("Wallhack", y, "wallhack"); y = y + 40
-createToggle("Speed Hack", y, "speed"); y = y + 40
-createSlider("Speed Amount", y, 16, 100, "speedAmount", ""); y = y + 55
-createToggle("High Jump", y, "jump"); y = y + 40
-createSlider("Jump Power", y, 30, 200, "jumpPower", ""); y = y + 55
-createToggle("Aimbot", y, "aimbot"); y = y + 40
-createSlider("Aim FOV", y, 50, 500, "aimFOV", ""); y = y + 55
+local function createDropdown(parent, name, yPos, options, setting, callback)
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(0.9, 0, 0, 45)
+    bg.Position = UDim2.new(0.05, 0, 0, yPos)
+    bg.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    bg.BorderSizePixel = 0
+    bg.Parent = parent
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.5, -5, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = name
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextScaled = true
+    label.Font = Enum.Font.SourceSans
+    label.Parent = bg
+    
+    local currentValue = settings[setting]
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 80, 0, 30)
+    button.Position = UDim2.new(1, -90, 0.5, -15)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    button.Text = tostring(currentValue)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextScaled = true
+    button.Font = Enum.Font.SourceSansBold
+    button.Parent = bg
+    
+    local menuOpen = false
+    local optionsFrame
+    
+    button.MouseButton1Click:Connect(function()
+        menuOpen = not menuOpen
+        if menuOpen then
+            if optionsFrame then optionsFrame:Destroy() end
+            optionsFrame = Instance.new("Frame")
+            optionsFrame.Size = UDim2.new(0, 80, 0, #options * 25)
+            optionsFrame.Position = UDim2.new(1, -90, 1, 0)
+            optionsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+            optionsFrame.BorderSizePixel = 1
+            optionsFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+            optionsFrame.Parent = bg
+            
+            for i, option in ipairs(options) do
+                local optBtn = Instance.new("TextButton")
+                optBtn.Size = UDim2.new(1, 0, 0, 25)
+                optBtn.Position = UDim2.new(0, 0, 0, (i-1)*25)
+                optBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+                optBtn.Text = option
+                optBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                optBtn.TextScaled = true
+                optBtn.Font = Enum.Font.SourceSans
+                optBtn.Parent = optionsFrame
+                
+                optBtn.MouseButton1Click:Connect(function()
+                    settings[setting] = option
+                    button.Text = option
+                    optionsFrame:Destroy()
+                    menuOpen = false
+                    if callback then callback(option) end
+                end)
+            end
+        else
+            if optionsFrame then optionsFrame:Destroy() end
+        end
+    end)
+    
+    return bg
+end
 
-scroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+-- ==================== ЗАПОЛНЯЕМ ВКЛАДКИ ====================
+
+-- ESP вкладка
+local espScroller = tabContents["ESP"]
+local y = 5
+createToggle(espScroller, "ESP Enabled", y, "esp"); y = y + 40
+createToggle(espScroller, "3D Boxes", y, "boxes"); y = y + 40
+createToggle(espScroller, "Name Tags", y, "names"); y = y + 40
+createToggle(espScroller, "Health Bars", y, "health"); y = y + 40
+createToggle(espScroller, "Wallhack", y, "wallhack"); y = y + 40
+espScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+
+-- AIMBOT вкладка
+local aimScroller = tabContents["AIMBOT"]
+y = 5
+createToggle(aimScroller, "Aimbot Enabled", y, "aimbot"); y = y + 40
+createSlider(aimScroller, "Aim FOV", y, 50, 500, "aimFOV", "px"); y = y + 55
+createSlider(aimScroller, "Smoothness", y, 1, 20, "aimSmooth", ""); y = y + 55
+createToggle(aimScroller, "Team Check", y, "aimTeamCheck"); y = y + 40
+createToggle(aimScroller, "Wall Check", y, "aimWallCheck"); y = y + 40
+createDropdown(aimScroller, "Target Part", y, {"Head", "HumanoidRootPart", "Torso"}, "aimTargetPart"); y = y + 50
+createDropdown(aimScroller, "Target Type", y, {"Closest", "Lowest HP", "Highest HP", "Lowest Dist"}, "aimTargetType"); y = y + 50
+aimScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+
+-- MOVEMENT вкладка
+local moveScroller = tabContents["MOVEMENT"]
+y = 5
+createToggle(moveScroller, "Speed Hack", y, "speed"); y = y + 40
+createSlider(moveScroller, "Speed Amount", y, 16, 100, "speedAmount", ""); y = y + 55
+createToggle(moveScroller, "High Jump", y, "jump"); y = y + 40
+createSlider(moveScroller, "Jump Power", y, 30, 200, "jumpPower", ""); y = y + 55
+moveScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+
+-- SETTINGS вкладка
+local settingsScroller = tabContents["SETTINGS"]
+y = 5
+createToggle(settingsScroller, "Menu Key: Right Shift", y, "menuKey", function() end); y = y + 40
+settingsScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+
+-- ==================== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ====================
+
+for i, tabName in ipairs(tabs) do
+    tabButtons[tabName].MouseButton1Click:Connect(function()
+        for _, btn in pairs(tabButtons) do
+            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+        end
+        tabButtons[tabName].BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        
+        for _, scroller in pairs(tabContents) do
+            scroller.Visible = false
+        end
+        tabContents[tabName].Visible = true
+    end)
+end
 
 -- ==================== КРУЖОК АИМА ====================
 
@@ -391,6 +555,102 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- ==================== AIMBOT ====================
+
+local function getTeam(player)
+    if not player or not player.Character then return nil end
+    local team = player.Team
+    return team and team.Name or "NoTeam"
+end
+
+local function getTargetPart(player)
+    if not player or not player.Character then return nil end
+    if settings.aimTargetPart == "Head" then
+        return player.Character:FindFirstChild("Head")
+    elseif settings.aimTargetPart == "HumanoidRootPart" then
+        return player.Character:FindFirstChild("HumanoidRootPart")
+    elseif settings.aimTargetPart == "Torso" then
+        return player.Character:FindFirstChild("Torso")
+    end
+    return player.Character:FindFirstChild("HumanoidRootPart")
+end
+
+local function isVisible(player, part)
+    if not part then return false end
+    if not settings.aimWallCheck then return true end
+    local ray = Ray.new(Camera.CFrame.Position, (part.Position - Camera.CFrame.Position).Unit * 1000)
+    local hit, pos = workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character, player.Character})
+    return hit == nil or hit:IsDescendantOf(player.Character)
+end
+
+local function getClosestPlayer()
+    local closest = nil
+    local closestDist = settings.aimFOV
+    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    local players = {}
+    
+    -- Собираем всех игроков
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+            local humanoid = player.Character.Humanoid
+            if humanoid and humanoid.Health > 0 then
+                -- Team check
+                if settings.aimTeamCheck and player.Team == LocalPlayer.Team then
+                    continue
+                end
+                
+                local targetPart = getTargetPart(player)
+                if targetPart then
+                    -- Visible check
+                    if settings.aimWallCheck and not isVisible(player, targetPart) then
+                        continue
+                    end
+                    
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+                    if onScreen then
+                        local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                        if dist < closestDist then
+                            table.insert(players, {
+                                player = player,
+                                part = targetPart,
+                                dist = dist,
+                                health = humanoid.Health
+                            })
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Выбираем цель по типу
+    if #players == 0 then return nil end
+    
+    if settings.aimTargetType == "Closest" or settings.aimTargetType == "Lowest Dist" then
+        table.sort(players, function(a, b) return a.dist < b.dist end)
+        return players[1].player, players[1].part
+    elseif settings.aimTargetType == "Lowest HP" then
+        table.sort(players, function(a, b) return a.health < b.health end)
+        return players[1].player, players[1].part
+    elseif settings.aimTargetType == "Highest HP" then
+        table.sort(players, function(a, b) return a.health > b.health end)
+        return players[1].player, players[1].part
+    end
+    
+    return nil
+end
+
+-- Aimbot
+RunService.RenderStepped:Connect(function()
+    if settings.aimbot then
+        local targetPlayer, targetPart = getClosestPlayer()
+        if targetPlayer and targetPart then
+            local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
+            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / settings.aimSmooth)
+        end
+    end
+end)
+
 -- ==================== SPEED HACK ====================
 
 local function doSpeed()
@@ -411,7 +671,6 @@ local function doJump()
     local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
     if not humanoid then return end
     
-    -- Проверяем, прыгает ли игрок
     if humanoid.Jump and not humanoid.FloorMaterial then
         local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if root then
@@ -427,44 +686,6 @@ RunService.Heartbeat:Connect(function()
     doJump()
 end)
 
--- ==================== AIMBOT ====================
-
-local function getClosestPlayer()
-    local closest = nil
-    local closestDist = settings.aimFOV
-    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local root = player.Character.HumanoidRootPart
-            if root then
-                local screenPos, onScreen = Camera:WorldToViewportPoint(root.Position)
-                if onScreen then
-                    local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-                    if dist < closestDist then
-                        closestDist = dist
-                        closest = player
-                    end
-                end
-            end
-        end
-    end
-    
-    return closest
-end
-
-RunService.RenderStepped:Connect(function()
-    if settings.aimbot then
-        local target = getClosestPlayer()
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            local root = target.Character.HumanoidRootPart
-            if root then
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, root.Position)
-            end
-        end
-    end
-end)
-
 -- ==================== ОТКРЫТИЕ МЕНЮ ====================
 
 if isMobile then
@@ -474,7 +695,7 @@ if isMobile then
 else
     UserInputService.InputBegan:Connect(function(input, gp)
         if gp then return end
-        if input.KeyCode == Enum.KeyCode.RightShift then
+        if input.KeyCode == settings.menuKey then
             menu.Visible = not menu.Visible
         end
     end)
@@ -482,10 +703,8 @@ end
 
 -- ==================== ИНИЦИАЛИЗАЦИЯ ====================
 
--- Даем время на загрузку
 task.wait(2)
 
--- Создаем ESP для существующих игроков
 for _, player in ipairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then
         task.spawn(function()
@@ -494,7 +713,6 @@ for _, player in ipairs(Players:GetPlayers()) do
     end
 end
 
--- Обработка новых игроков
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function()
         task.wait(1.5)
@@ -506,12 +724,11 @@ end)
 
 Players.PlayerRemoving:Connect(removeESP)
 
--- Уведомление о загрузке
 StarterGui:SetCore("SendNotification", {
-    Title = "rusticlient v1.0",
+    Title = "rusticlient v2.0",
     Text = "Загружен! ПК: Правый Shift | Телефон: кнопка",
     Duration = 5
 })
 
-print("✅ rusticlient v1.0 загружен!")
-print("📌 Автор: SWILL / rusticlient")
+print("✅ rusticlient v2.0 загружен!")
+print("📌 Aimbot с полной настройкой!")
