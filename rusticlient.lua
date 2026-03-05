@@ -1,4 +1,4 @@
--- rusticlient v2.0 - ESP + Speed + High Jump + Настраиваемый Aimbot
+-- rusticlient v3.0 - ESP + Speed + Jump + No Fall + No Jump Cooldown + God Mode
 -- Автор: SWILL / rusticlient
 
 local Players = game:GetService("Players")
@@ -51,8 +51,8 @@ buttonCorner.Parent = menuButton
 -- ==================== МЕНЮ ====================
 
 local menu = Instance.new("Frame")
-menu.Size = UDim2.new(0, 350, 0, 550)
-menu.Position = UDim2.new(0.5, -175, 0.5, -275)
+menu.Size = UDim2.new(0, 380, 0, 600)
+menu.Position = UDim2.new(0.5, -190, 0.5, -300)
 menu.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 menu.BackgroundTransparency = 0.1
 menu.Visible = false
@@ -68,7 +68,7 @@ menuCorner.Parent = menu
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
-title.Text = "rusticlient v2.0"
+title.Text = "rusticlient v3.0"
 title.TextColor3 = Color3.fromRGB(255, 100, 100)
 title.TextScaled = true
 title.Font = Enum.Font.SourceSansBold
@@ -95,12 +95,12 @@ tabFrame.Parent = menu
 
 local tabButtons = {}
 local tabContents = {}
-local tabs = {"ESP", "AIMBOT", "MOVEMENT", "SETTINGS"}
+local tabs = {"ESP", "AIMBOT", "MOVEMENT", "PLAYER", "SETTINGS"}
 
 for i, tabName in ipairs(tabs) do
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.25, -2, 1, -4)
-    btn.Position = UDim2.new((i-1)*0.25, 2, 0, 2)
+    btn.Size = UDim2.new(0.2, -2, 1, -4)
+    btn.Position = UDim2.new((i-1)*0.2, 2, 0, 2)
     btn.BackgroundColor3 = i == 1 and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(40, 40, 50)
     btn.Text = tabName
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -128,7 +128,7 @@ for _, tabName in ipairs(tabs) do
     scroller.BorderSizePixel = 0
     scroller.ScrollBarThickness = 6
     scroller.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 50)
-    scroller.CanvasSize = UDim2.new(0, 0, 0, 400)
+    scroller.CanvasSize = UDim2.new(0, 0, 0, 500)
     scroller.Visible = (tabName == "ESP")
     scroller.Parent = contentFrame
     tabContents[tabName] = scroller
@@ -150,14 +150,21 @@ local settings = {
     aimSmooth = 5,
     aimTeamCheck = false,
     aimWallCheck = true,
-    aimTargetPart = "Head", -- Head, HumanoidRootPart, Torso
-    aimTargetType = "Closest", -- Closest, LowestHP, HighestHP, LowestDist
+    aimTargetPart = "Head",
+    aimTargetType = "Closest",
     
     -- Movement
     speed = false,
     speedAmount = 32,
     jump = false,
     jumpPower = 50,
+    
+    -- Player (НОВЫЕ ФУНКЦИИ)
+    noFallDamage = false,
+    noJumpCooldown = false,
+    godMode = false,
+    infiniteJump = false,
+    noClip = false,
     
     -- Settings
     menuKey = Enum.KeyCode.RightShift
@@ -375,6 +382,16 @@ createSlider(moveScroller, "Speed Amount", y, 16, 100, "speedAmount", ""); y = y
 createToggle(moveScroller, "High Jump", y, "jump"); y = y + 40
 createSlider(moveScroller, "Jump Power", y, 30, 200, "jumpPower", ""); y = y + 55
 moveScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+
+-- PLAYER вкладка (НОВЫЕ ФУНКЦИИ)
+local playerScroller = tabContents["PLAYER"]
+y = 5
+createToggle(playerScroller, "No Fall Damage", y, "noFallDamage"); y = y + 40
+createToggle(playerScroller, "No Jump Cooldown", y, "noJumpCooldown"); y = y + 40
+createToggle(playerScroller, "God Mode", y, "godMode"); y = y + 40
+createToggle(playerScroller, "Infinite Jump", y, "infiniteJump"); y = y + 40
+createToggle(playerScroller, "No Clip", y, "noClip"); y = y + 40
+playerScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
 
 -- SETTINGS вкладка
 local settingsScroller = tabContents["SETTINGS"]
@@ -679,11 +696,83 @@ local function doJump()
     end
 end
 
+-- ==================== NO FALL DAMAGE ====================
+
+local function doNoFallDamage()
+    if not settings.noFallDamage or not LocalPlayer.Character then return end
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    -- Сбрасываем скорость падения при приземлении
+    if humanoid.FloorMaterial then
+        local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.Velocity = Vector3.new(root.Velocity.X, 0, root.Velocity.Z)
+        end
+    end
+end
+
+-- ==================== NO JUMP COOLDOWN ====================
+
+local function doNoJumpCooldown()
+    if not settings.noJumpCooldown or not LocalPlayer.Character then return end
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    -- Убираем задержку между прыжками
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        if humanoid.FloorMaterial then
+            humanoid.Jump = true
+        end
+    end
+end
+
+-- ==================== GOD MODE ====================
+
+local function doGodMode()
+    if not settings.godMode or not LocalPlayer.Character then return end
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    -- Бесконечное здоровье
+    humanoid.Health = humanoid.MaxHealth
+end
+
+-- ==================== INFINITE JUMP ====================
+
+local function doInfiniteJump()
+    if not settings.infiniteJump or not LocalPlayer.Character then return end
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    -- Можно прыгать в воздухе
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        humanoid.Jump = true
+    end
+end
+
+-- ==================== NO CLIP ====================
+
+local function doNoClip()
+    if not settings.noClip or not LocalPlayer.Character then return end
+    
+    for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+end
+
 -- ==================== ГЛАВНЫЙ ЦИКЛ ====================
 
 RunService.Heartbeat:Connect(function()
     doSpeed()
     doJump()
+    doNoFallDamage()
+    doNoJumpCooldown()
+    doGodMode()
+    doInfiniteJump()
+    doNoClip()
 end)
 
 -- ==================== ОТКРЫТИЕ МЕНЮ ====================
@@ -725,10 +814,10 @@ end)
 Players.PlayerRemoving:Connect(removeESP)
 
 StarterGui:SetCore("SendNotification", {
-    Title = "rusticlient v2.0",
+    Title = "rusticlient v3.0",
     Text = "Загружен! ПК: Правый Shift | Телефон: кнопка",
     Duration = 5
 })
 
-print("✅ rusticlient v2.0 загружен!")
-print("📌 Aimbot с полной настройкой!")
+print("✅ rusticlient v3.0 загружен!")
+print("📌 Новые функции: No Fall, No Jump CD, God Mode, Inf Jump, No Clip!")
