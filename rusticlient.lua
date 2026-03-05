@@ -1,4 +1,4 @@
--- rusticlient v6.0 - С поддержкой биндов (keybinds)
+-- rusticlient v6.1 - ИСПРАВЛЕННЫЙ SPEED HACK
 -- Автор: SWILL / rusticlient
 
 local Players = game:GetService("Players")
@@ -68,7 +68,7 @@ menuCorner.Parent = menu
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
-title.Text = "rusticlient v6.0"
+title.Text = "rusticlient v6.1"
 title.TextColor3 = Color3.fromRGB(255, 100, 100)
 title.TextScaled = true
 title.Font = Enum.Font.SourceSansBold
@@ -176,7 +176,7 @@ local settings = {
     spinType = "Constant",
     spinOnAim = false,
     
-    -- Keybinds (БИНДЫ)
+    -- Keybinds
     bindMenu = Enum.KeyCode.RightShift,
     bindESP = Enum.KeyCode.F1,
     bindAimbot = Enum.KeyCode.F2,
@@ -393,7 +393,6 @@ local function createDropdown(parent, name, yPos, options, setting, callback)
     return bg
 end
 
--- Функция для создания бинда (НОВАЯ)
 local function createBind(parent, name, yPos, setting, callback)
     local bg = Instance.new("Frame")
     bg.Size = UDim2.new(0.9, 0, 0, 45)
@@ -445,7 +444,6 @@ local function createBind(parent, name, yPos, setting, callback)
             end
         end)
         
-        -- Таймаут через 5 секунд
         task.wait(5)
         if listening then
             listening = false
@@ -514,7 +512,7 @@ createDropdown(spinScroller, "Type", y, {"Constant", "Random", "Mouse"}, "spinTy
 createToggle(spinScroller, "Spin on Aim", y, "spinOnAim"); y = y + 40
 spinScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
 
--- BINDS вкладка (НОВАЯ)
+-- BINDS вкладка
 local bindsScroller = tabContents["BINDS"]
 y = 5
 createBind(bindsScroller, "Menu Key", y, "bindMenu"); y = y + 50
@@ -730,6 +728,256 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- ==================== SPEED HACK (ИСПРАВЛЕННЫЙ) ====================
+
+local function doSpeed()
+    if not settings.speed or not LocalPlayer.Character then return end
+    
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    -- Проверяем, движется ли игрок
+    local moveDirection = humanoid.MoveDirection
+    if moveDirection.Magnitude > 0 then
+        -- Применяем скорость
+        local speedBoost = settings.speedAmount - 16
+        if speedBoost > 0 then
+            rootPart.Velocity = rootPart.Velocity + moveDirection * speedBoost
+        end
+    end
+end
+
+-- ==================== HIGH JUMP ====================
+
+local function doJump()
+    if not settings.jump or not LocalPlayer.Character then return end
+    
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    -- Проверяем, прыгает ли игрок
+    if humanoid.Jump and not humanoid.FloorMaterial then
+        rootPart.Velocity = Vector3.new(rootPart.Velocity.X, settings.jumpPower, rootPart.Velocity.Z)
+    end
+end
+
+-- ==================== NO FALL DAMAGE ====================
+
+local function doNoFallDamage()
+    if not settings.noFallDamage or not LocalPlayer.Character then return end
+    
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    -- Сбрасываем скорость при приземлении
+    if humanoid.FloorMaterial then
+        local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            rootPart.Velocity = Vector3.new(rootPart.Velocity.X, 0, rootPart.Velocity.Z)
+        end
+    end
+end
+
+-- ==================== NO JUMP COOLDOWN ====================
+
+local function doNoJumpCooldown()
+    if not settings.noJumpCooldown or not LocalPlayer.Character then return end
+    
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        if humanoid.FloorMaterial then
+            humanoid.Jump = true
+        end
+    end
+end
+
+-- ==================== GOD MODE ====================
+
+local function doGodMode()
+    if not settings.godMode or not LocalPlayer.Character then return end
+    
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    humanoid.Health = humanoid.MaxHealth
+end
+
+-- ==================== INFINITE JUMP ====================
+
+local function doInfiniteJump()
+    if not settings.infiniteJump or not LocalPlayer.Character then return end
+    
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        humanoid.Jump = true
+    end
+end
+
+-- ==================== NO CLIP ====================
+
+local function doNoClip()
+    if not settings.noClip or not LocalPlayer.Character then return end
+    
+    for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+end
+
+-- ==================== AIMBOT ====================
+
+local function getTeam(player)
+    if not player or not player.Character then return nil end
+    local team = player.Team
+    return team and team.Name or "NoTeam"
+end
+
+local function getTargetPart(player)
+    if not player or not player.Character then return nil end
+    if settings.aimTargetPart == "Head" then
+        return player.Character:FindFirstChild("Head")
+    elseif settings.aimTargetPart == "HumanoidRootPart" then
+        return player.Character:FindFirstChild("HumanoidRootPart")
+    elseif settings.aimTargetPart == "Torso" then
+        return player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("UpperTorso")
+    end
+    return player.Character:FindFirstChild("HumanoidRootPart")
+end
+
+local function isVisible(player, part)
+    if not part then return false end
+    if not settings.aimWallCheck then return true end
+    
+    local ray = Ray.new(Camera.CFrame.Position, (part.Position - Camera.CFrame.Position).Unit * 1000)
+    local ignoreList = {LocalPlayer.Character, player.Character}
+    local hit, pos = workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
+    return hit == nil or hit:IsDescendantOf(player.Character)
+end
+
+local function getClosestPlayer()
+    local closest = nil
+    local closestPart = nil
+    local closestDist = settings.aimFOV
+    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    local players = {}
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+            local humanoid = player.Character.Humanoid
+            if humanoid and humanoid.Health > 0 then
+                if settings.aimTeamCheck and player.Team == LocalPlayer.Team then
+                    continue
+                end
+                
+                local targetPart = getTargetPart(player)
+                if targetPart then
+                    if settings.aimWallCheck and not isVisible(player, targetPart) then
+                        continue
+                    end
+                    
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+                    if onScreen then
+                        local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                        if dist <= closestDist then
+                            table.insert(players, {
+                                player = player,
+                                part = targetPart,
+                                dist = dist,
+                                health = humanoid.Health,
+                                velocity = humanoid.MoveDirection * humanoid.WalkSpeed
+                            })
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    if #players == 0 then return nil, nil end
+    
+    if settings.aimTargetType == "Closest" or settings.aimTargetType == "Lowest Dist" then
+        table.sort(players, function(a, b) return a.dist < b.dist end)
+    elseif settings.aimTargetType == "Lowest HP" then
+        table.sort(players, function(a, b) return a.health < b.health end)
+    elseif settings.aimTargetType == "Highest HP" then
+        table.sort(players, function(a, b) return a.health > b.health end)
+    end
+    
+    return players[1].player, players[1].part, players[1]
+end
+
+RunService.RenderStepped:Connect(function()
+    if settings.aimbot then
+        local targetPlayer, targetPart, targetData = getClosestPlayer()
+        if targetPlayer and targetPart then
+            local targetPos = targetPart.Position
+            
+            if settings.aimPredictMovement and targetData and targetData.velocity then
+                local distance = (targetPos - Camera.CFrame.Position).Magnitude
+                local timeToTarget = distance / 1000
+                targetPos = targetPos + targetData.velocity * timeToTarget * settings.aimPredictAmount
+            end
+            
+            local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPos)
+            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / settings.aimSmooth)
+        end
+    end
+end)
+
+-- ==================== SPIN BOT ====================
+
+local spinAngle = 0
+
+RunService.RenderStepped:Connect(function()
+    if settings.spinBot and LocalPlayer.Character then
+        local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+        local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        
+        if humanoid and root then
+            local direction = 1
+            if settings.spinDirection == "Left" then
+                direction = -1
+            elseif settings.spinDirection == "Random" then
+                direction = math.random() > 0.5 and 1 or -1
+            end
+            
+            if settings.spinType == "Constant" then
+                spinAngle = spinAngle + settings.spinSpeed * direction
+            elseif settings.spinType == "Random" then
+                spinAngle = spinAngle + settings.spinSpeed * direction * math.random()
+            elseif settings.spinType == "Mouse" then
+                local mouseDelta = UserInputService:GetMouseDelta()
+                spinAngle = spinAngle + mouseDelta.X * 0.1
+            end
+            
+            root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, math.rad(spinAngle), 0)
+        end
+    end
+end)
+
+-- ==================== ГЛАВНЫЙ ЦИКЛ ====================
+
+RunService.Heartbeat:Connect(function()
+    doSpeed()
+    doJump()
+    doNoFallDamage()
+    doNoJumpCooldown()
+    doGodMode()
+    doInfiniteJump()
+    doNoClip()
+end)
+
 -- ==================== ОБРАБОТКА БИНДОВ ====================
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -738,7 +986,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     
     local key = input.KeyCode
     
-    -- Проверяем бинды
     if key == settings.bindMenu then
         menu.Visible = not menu.Visible
         if settings.showBinds then
@@ -814,11 +1061,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- ==================== AIMBOT, SPEED, JUMP И ДРУГИЕ ФУНКЦИИ ====================
-
--- Здесь остальной код аимбота, спида, джампа и т.д. (такой же как в v5.0)
--- (сокращено для читаемости, но в реальном скрипте нужно вставить все функции)
-
 -- ==================== ИНИЦИАЛИЗАЦИЯ ====================
 
 task.wait(2)
@@ -842,22 +1084,12 @@ end)
 
 Players.PlayerRemoving:Connect(removeESP)
 
--- Показываем список биндов при загрузке
-local bindList = ""
-bindList = bindList .. "F1: ESP\n"
-bindList = bindList .. "F2: Aimbot\n"
-bindList = bindList .. "F3: Speed\n"
-bindList = bindList .. "F4: Jump\n"
-bindList = bindList .. "F5: God Mode\n"
-bindList = bindList .. "F6: Spin\n"
-bindList = bindList .. "F7: No Clip\n"
-bindList = bindList .. "Right Shift: Menu"
-
 StarterGui:SetCore("SendNotification", {
-    Title = "rusticlient v6.0",
-    Text = "Бинды настроены!",
+    Title = "rusticlient v6.1",
+    Text = "Speed исправлен! Бинды: F1-F7",
     Duration = 5
 })
 
-print("✅ rusticlient v6.0 загружен!")
+print("✅ rusticlient v6.1 загружен!")
+print("📌 Speed HACK ИСПРАВЛЕН!")
 print("📌 Бинды: F1-F7, Right Shift для меню")
