@@ -1,4 +1,4 @@
--- rusticlient v9.0 - Полностью рабочая версия для телефона
+-- rusticlient v10.0 - God Mode переработан + Render вкладка
 -- Автор: SWILL / rusticlient
 
 local Players = game:GetService("Players")
@@ -9,6 +9,8 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local StarterGui = game:GetService("StarterGui")
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
 
 -- ==================== ОПРЕДЕЛЕНИЕ УСТРОЙСТВА ====================
 
@@ -49,7 +51,7 @@ local buttonCorner = Instance.new("UICorner")
 buttonCorner.CornerRadius = UDim.new(1, 0)
 buttonCorner.Parent = menuButton
 
--- Кнопка для быстрого включения Aimbot (только для телефона)
+-- Кнопка для быстрого включения Aimbot
 local aimbotButton = Instance.new("TextButton")
 aimbotButton.Size = UDim2.new(0, 60, 0, 60)
 aimbotButton.Position = UDim2.new(1, -75, 0.5, -30)
@@ -65,7 +67,7 @@ local aimbotCorner = Instance.new("UICorner")
 aimbotCorner.CornerRadius = UDim.new(0, 10)
 aimbotCorner.Parent = aimbotButton
 
--- Кнопка для быстрого включения ESP (только для телефона)
+-- Кнопка для быстрого включения ESP
 local espButton = Instance.new("TextButton")
 espButton.Size = UDim2.new(0, 60, 0, 60)
 espButton.Position = UDim2.new(1, -75, 0.5, 35)
@@ -84,8 +86,8 @@ espCorner.Parent = espButton
 -- ==================== МЕНЮ ====================
 
 local menu = Instance.new("Frame")
-menu.Size = isMobile and UDim2.new(0, 380, 0, 550) or UDim2.new(0, 450, 0, 700)
-menu.Position = isMobile and UDim2.new(0.5, -190, 0.5, -275) or UDim2.new(0.5, -225, 0.5, -350)
+menu.Size = isMobile and UDim2.new(0, 380, 0, 550) or UDim2.new(0, 450, 0, 750)
+menu.Position = isMobile and UDim2.new(0.5, -190, 0.5, -275) or UDim2.new(0.5, -225, 0.5, -375)
 menu.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 menu.BackgroundTransparency = 0.1
 menu.Visible = false
@@ -101,7 +103,7 @@ menuCorner.Parent = menu
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
-title.Text = "rusticlient v9.0"
+title.Text = "rusticlient v10.0"
 title.TextColor3 = Color3.fromRGB(255, 100, 100)
 title.TextScaled = true
 title.Font = Enum.Font.SourceSansBold
@@ -128,7 +130,7 @@ tabFrame.Parent = menu
 
 local tabButtons = {}
 local tabContents = {}
-local tabs = {"ESP", "AIMBOT", "MOVE", "PLAYER", "SPIN", "BINDS", "SET"}
+local tabs = {"ESP", "AIMBOT", "MOVE", "PLAYER", "RENDER", "SPIN", "BINDS"}
 
 for i, tabName in ipairs(tabs) do
     local btn = Instance.new("TextButton")
@@ -161,7 +163,7 @@ for _, tabName in ipairs(tabs) do
     scroller.BorderSizePixel = 0
     scroller.ScrollBarThickness = isMobile and 8 or 6
     scroller.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 50)
-    scroller.CanvasSize = UDim2.new(0, 0, 0, 600)
+    scroller.CanvasSize = UDim2.new(0, 0, 0, 800)
     scroller.Visible = (tabName == "ESP")
     scroller.Parent = contentFrame
     tabContents[tabName] = scroller
@@ -177,7 +179,7 @@ local settings = {
     health = true,
     wallhack = true,
     
-    -- Aimbot (ВСЕ НАСТРОЙКИ ВЕРНУЛ)
+    -- Aimbot
     aimbot = false,
     aimFOV = 200,
     aimSmooth = 5,
@@ -188,18 +190,35 @@ local settings = {
     aimPredictMovement = false,
     aimPredictAmount = 0.5,
     
-    -- Movement
+    -- Movement (СПИД ТОЛЬКО НА ЗЕМЛЕ)
     speed = false,
     speedAmount = 32,
-    jump = false,
-    jumpPower = 50,
     
-    -- Player (ВЕРНУЛ ВСЕ)
-    noFallDamage = false,
+    -- Player (ПЕРЕРАБОТАННЫЙ GOD MODE)
     godMode = false,
+    noFallDamage = false,
     infiniteJump = false,
     noClip = false,
-    noJumpCooldown = false, -- ВЕРНУЛ!
+    noJumpCooldown = false,
+    
+    -- RENDER (НОВАЯ ВКЛАДКА)
+    removeGrass = false,
+    removeFoliage = false,
+    removeTrees = false,
+    removeClouds = false,
+    removeFog = false,
+    removeWater = false,
+    removeSky = false,
+    removeClothes = false,
+    potatoGraphics = false,
+    fullBright = false,
+    
+    -- Visuals
+    jumpTrail = false,
+    jumpTrailColor = "Red",
+    chineseHat = false,
+    chineseHatColor = "Red",
+    spinTrail = false,
     
     -- Spin Bot
     spinBot = false,
@@ -212,10 +231,9 @@ local settings = {
     bindESP = Enum.KeyCode.F1,
     bindAimbot = Enum.KeyCode.F2,
     bindSpeed = Enum.KeyCode.F3,
-    bindJump = Enum.KeyCode.F4,
-    bindGodMode = Enum.KeyCode.F5,
-    bindSpin = Enum.KeyCode.F6,
-    bindNoClip = Enum.KeyCode.F7,
+    bindGodMode = Enum.KeyCode.F4,
+    bindSpin = Enum.KeyCode.F5,
+    bindNoClip = Enum.KeyCode.F6,
     
     -- Settings
     showBinds = true
@@ -381,6 +399,9 @@ local function createToggle(parent, name, yPos, setting)
         settings[setting] = not settings[setting]
         toggle.BackgroundColor3 = settings[setting] and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
         toggle.Text = settings[setting] and "ON" or "OFF"
+        if setting == "removeGrass" or setting == "removeFoliage" or setting == "removeTrees" or setting == "potatoGraphics" then
+            applyRenderSettings()
+        end
     end)
     
     return bg
@@ -498,132 +519,257 @@ local function createDropdown(parent, name, yPos, options, setting)
     return bg
 end
 
--- ==================== ЗАПОЛНЯЕМ ВКЛАДКИ ====================
+-- ==================== RENDER ФУНКЦИИ ====================
 
--- ESP вкладка
-local espScroller = tabContents["ESP"]
-local y = 5
-createToggle(espScroller, "ESP", y, "esp"); y = y + 40
-createToggle(espScroller, "Names", y, "names"); y = y + 40
-createToggle(espScroller, "Distance", y, "distance"); y = y + 40
-createToggle(espScroller, "Health", y, "health"); y = y + 40
-createToggle(espScroller, "Wallhack", y, "wallhack"); y = y + 40
-espScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- AIMBOT вкладка (ВСЕ ВЕРНУЛ)
-local aimScroller = tabContents["AIMBOT"]
-y = 5
-createToggle(aimScroller, "Aimbot", y, "aimbot"); y = y + 40
-createSlider(aimScroller, "FOV", y, 50, 500, "aimFOV", "px"); y = y + 55
-createSlider(aimScroller, "Smooth", y, 1, 20, "aimSmooth", ""); y = y + 55
-createToggle(aimScroller, "Team Check", y, "aimTeamCheck"); y = y + 40
-createToggle(aimScroller, "Wall Check", y, "aimWallCheck"); y = y + 40
-createToggle(aimScroller, "Predict Move", y, "aimPredictMovement"); y = y + 40
-createSlider(aimScroller, "Prediction", y, 0.1, 2, "aimPredictAmount", ""); y = y + 55
-createDropdown(aimScroller, "Target Part", y, {"Head", "HumanoidRootPart", "Torso"}, "aimTargetPart"); y = y + 50
-createDropdown(aimScroller, "Target Type", y, {"Closest", "Lowest HP", "Highest HP", "Lowest Dist"}, "aimTargetType"); y = y + 50
-aimScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- MOVE вкладка
-local moveScroller = tabContents["MOVE"]
-y = 5
-createToggle(moveScroller, "Speed", y, "speed"); y = y + 40
-createSlider(moveScroller, "Speed Amount", y, 16, 100, "speedAmount", ""); y = y + 55
-createToggle(moveScroller, "High Jump", y, "jump"); y = y + 40
-createSlider(moveScroller, "Jump Power", y, 30, 200, "jumpPower", ""); y = y + 55
-moveScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- PLAYER вкладка (ВЕРНУЛ ВСЕ)
-local playerScroller = tabContents["PLAYER"]
-y = 5
-createToggle(playerScroller, "GOD MODE", y, "godMode"); y = y + 40
-createToggle(playerScroller, "NO FALL", y, "noFallDamage"); y = y + 40
-createToggle(playerScroller, "No Jump CD", y, "noJumpCooldown"); y = y + 40
-createToggle(playerScroller, "Infinite Jump", y, "infiniteJump"); y = y + 40
-createToggle(playerScroller, "No Clip", y, "noClip"); y = y + 40
-playerScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- SPIN вкладка
-local spinScroller = tabContents["SPIN"]
-y = 5
-createToggle(spinScroller, "Spin Bot", y, "spinBot"); y = y + 40
-createSlider(spinScroller, "Speed", y, 1, 30, "spinSpeed", ""); y = y + 55
-createDropdown(spinScroller, "Direction", y, {"Right", "Left", "Random"}, "spinDirection"); y = y + 50
-createDropdown(spinScroller, "Type", y, {"Constant", "Random", "Mouse"}, "spinType"); y = y + 50
-spinScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- BINDS вкладка
-local bindsScroller = tabContents["BINDS"]
-y = 5
--- Можно добавить настройки биндов
-bindsScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- SET вкладка
-local settingsScroller = tabContents["SET"]
-y = 5
-createToggle(settingsScroller, "Show Notifications", y, "showBinds"); y = y + 40
-settingsScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
-
--- ==================== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ====================
-
-for i, tabName in ipairs(tabs) do
-    tabButtons[tabName].MouseButton1Click:Connect(function()
-        for _, btn in pairs(tabButtons) do
-            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+local originalMaterials = {}
+local function applyRenderSettings()
+    -- Удаление травы
+    if settings.removeGrass then
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("Grass") or v:IsA("GrassPart") then
+                v.Transparency = 1
+            elseif v.Name:lower():find("grass") and v:IsA("BasePart") then
+                v.Transparency = 1
+            end
         end
-        tabButtons[tabName].BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-        
-        for _, scroller in pairs(tabContents) do
-            scroller.Visible = false
+    end
+    
+    -- Удаление листвы (деревья, кусты)
+    if settings.removeFoliage then
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("Part") or v:IsA("MeshPart") then
+                if v.Material == Enum.Material.Leaves or v.Material == Enum.Material.Fabric then
+                    v.Transparency = 1
+                end
+            end
         end
-        tabContents[tabName].Visible = true
-    end)
+    end
+    
+    -- Удаление деревьев
+    if settings.removeTrees then
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("Part") or v:IsA("MeshPart") then
+                if v.Material == Enum.Material.Wood or v.Name:lower():find("tree") then
+                    v.Transparency = 1
+                end
+            end
+        end
+    end
+    
+    -- Картофельная графика
+    if settings.potatoGraphics then
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 50
+        Lighting.Brightness = 2
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("Part") or v:IsA("MeshPart") or v:IsA("UnionOperation") then
+                v.Material = Enum.Material.SmoothPlastic
+            end
+        end
+    else
+        Lighting.GlobalShadows = true
+        Lighting.FogEnd = 1000
+    end
+    
+    -- Удаление облаков
+    if settings.removeClouds then
+        if workspace:FindFirstChild("Clouds") then
+            workspace.Clouds:Destroy()
+        end
+        Lighting:SetAttribute("CloudsEnabled", false)
+    end
+    
+    -- Удаление тумана
+    if settings.removeFog then
+        Lighting.FogEnd = 100000
+        Lighting.FogStart = 100000
+    end
+    
+    -- Удаление воды
+    if settings.removeWater then
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v.Material == Enum.Material.Water or v.Name:lower():find("water") then
+                v.Transparency = 1
+            end
+        end
+    end
+    
+    -- Удаление неба
+    if settings.removeSky then
+        Lighting.Ambient = Color3.fromRGB(100, 100, 100)
+        Lighting.Brightness = 1
+        Lighting.OutdoorAmbient = Color3.fromRGB(100, 100, 100)
+    end
+    
+    -- Full Bright
+    if settings.fullBright then
+        Lighting.Brightness = 3
+        Lighting.GlobalShadows = false
+        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+    end
 end
 
--- ==================== GOD MODE ====================
+-- Удаление одежды
+local function removeClothes()
+    if not settings.removeClothes or not LocalPlayer.Character then return end
+    
+    for _, child in ipairs(LocalPlayer.Character:GetChildren()) do
+        if child:IsA("Shirt") or child:IsA("Pants") or child:IsA("ShirtGraphic") then
+            child:Destroy()
+        end
+        if child:IsA("Accessory") then
+            child:Destroy()
+        end
+    end
+end
 
-local function doGodMode()
-    if not settings.godMode or not LocalPlayer.Character then return end
+-- Китайская шляпа
+local chineseHat = nil
+local function updateChineseHat()
+    if settings.chineseHat and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+        if not chineseHat then
+            chineseHat = Instance.new("Part")
+            chineseHat.Name = "ChineseHat"
+            chineseHat.Size = Vector3.new(3, 0.5, 3)
+            chineseHat.Shape = Enum.PartType.Cylinder
+            chineseHat.BrickColor = BrickColor.new(settings.chineseHatColor)
+            chineseHat.Material = Enum.Material.Neon
+            chineseHat.CanCollide = false
+            chineseHat.Anchored = false
+            
+            local hatMesh = Instance.new("SpecialMesh")
+            hatMesh.MeshType = Enum.MeshType.Cylinder
+            hatMesh.Scale = Vector3.new(1, 0.2, 1)
+            hatMesh.Parent = chineseHat
+            
+            local hatJoint = Instance.new("Weld")
+            hatJoint.Part0 = LocalPlayer.Character.Head
+            hatJoint.Part1 = chineseHat
+            hatJoint.C0 = CFrame.new(0, 0.5, 0) * CFrame.Angles(0, 0, 0)
+            hatJoint.Parent = chineseHat
+            
+            chineseHat.Parent = LocalPlayer.Character
+        else
+            if chineseHat.Parent ~= LocalPlayer.Character then
+                chineseHat.Parent = LocalPlayer.Character
+            end
+        end
+    elseif chineseHat then
+        chineseHat:Destroy()
+        chineseHat = nil
+    end
+end
+
+-- Jump Trail
+local trailParts = {}
+local function createJumpTrail()
+    if not settings.jumpTrail or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        for _, part in ipairs(trailParts) do
+            if part then
+                part:Destroy()
+            end
+        end
+        trailParts = {}
+        return
+    end
+    
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if humanoid and humanoid.Jump and not humanoid.FloorMaterial then
+        local part = Instance.new("Part")
+        part.Size = Vector3.new(1, 1, 1)
+        part.Shape = Enum.PartType.Ball
+        part.BrickColor = BrickColor.new(settings.jumpTrailColor)
+        part.Material = Enum.Material.Neon
+        part.CanCollide = false
+        part.Anchored = true
+        part.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, -2, 0)
+        part.Parent = workspace
+        
+        table.insert(trailParts, part)
+        
+        -- Удаляем старые части
+        if #trailParts > 10 then
+            local oldest = table.remove(trailParts, 1)
+            if oldest then
+                oldest:Destroy()
+            end
+        end
+    end
+end
+
+-- ==================== SPEED (ТОЛЬКО НА ЗЕМЛЕ) ====================
+
+local function doSpeed()
+    if not settings.speed or not LocalPlayer.Character then return end
     local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
     if not humanoid then return end
-    humanoid.Health = humanoid.MaxHealth
+    local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    
+    -- Проверяем на земле ли игрок
+    if humanoid.FloorMaterial then
+        local moveDir = humanoid.MoveDirection
+        if moveDir.Magnitude > 0 then
+            local boost = settings.speedAmount - 16
+            if boost > 0 then
+                root.Velocity = root.Velocity + moveDir * boost
+            end
+        end
+    end
 end
 
--- ==================== NO FALL DAMAGE (ИСПРАВЛЕН) ====================
+-- ==================== GOD MODE (ПЕРЕРАБОТАН) ====================
+
+local originalHealth = 100
+local function doGodMode()
+    if not settings.godMode or not LocalPlayer.Character then return end
+    
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    -- Сохраняем оригинальное здоровье
+    if originalHealth ~= humanoid.Health then
+        originalHealth = humanoid.Health
+    end
+    
+    -- Показываем что у нас 1 HP (для врагов)
+    -- Но на самом деле здоровье не уменьшается
+    if humanoid.Health < originalHealth then
+        humanoid.Health = originalHealth
+    end
+    
+    -- Если нас ударили, показываем что здоровье упало, но сразу восстанавливаем
+    if humanoid.Health < humanoid.MaxHealth then
+        humanoid.Health = humanoid.MaxHealth
+    end
+end
+
+-- ==================== ОСТАЛЬНЫЕ ФУНКЦИИ ====================
 
 local function doNoFallDamage()
     if not settings.noFallDamage or not LocalPlayer.Character then return end
     local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
     if not humanoid then return end
     
-    -- Если игрок падает и вот-вот получит урон
     if humanoid:GetState() == Enum.HumanoidStateType.Freefall then
         local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if root then
-            -- Замедляем падение чтобы не было урона
-            if root.Velocity.Y < -50 then
-                root.Velocity = Vector3.new(root.Velocity.X, -20, root.Velocity.Z)
-            end
+        if root and root.Velocity.Y < -50 then
+            root.Velocity = Vector3.new(root.Velocity.X, -20, root.Velocity.Z)
         end
     end
 end
-
--- ==================== NO JUMP COOLDOWN (ВЕРНУЛ) ====================
 
 local function doNoJumpCooldown()
     if not settings.noJumpCooldown or not LocalPlayer.Character then return end
     local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
     if not humanoid then return end
     
-    -- Убираем задержку между прыжками
     if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
         if humanoid.FloorMaterial then
             humanoid.Jump = true
         end
     end
 end
-
--- ==================== INFINITE JUMP ====================
 
 local function doInfiniteJump()
     if not settings.infiniteJump or not LocalPlayer.Character then return end
@@ -635,40 +781,6 @@ local function doInfiniteJump()
     end
 end
 
--- ==================== SPEED ====================
-
-local function doSpeed()
-    if not settings.speed or not LocalPlayer.Character then return end
-    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-    if not humanoid then return end
-    local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    
-    local moveDir = humanoid.MoveDirection
-    if moveDir.Magnitude > 0 then
-        local boost = settings.speedAmount - 16
-        if boost > 0 then
-            root.Velocity = root.Velocity + moveDir * boost
-        end
-    end
-end
-
--- ==================== JUMP ====================
-
-local function doJump()
-    if not settings.jump or not LocalPlayer.Character then return end
-    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-    if not humanoid then return end
-    local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    
-    if humanoid.Jump and not humanoid.FloorMaterial then
-        root.Velocity = Vector3.new(root.Velocity.X, settings.jumpPower, root.Velocity.Z)
-    end
-end
-
--- ==================== NO CLIP ====================
-
 local function doNoClip()
     if not settings.noClip or not LocalPlayer.Character then return end
     for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
@@ -678,9 +790,6 @@ local function doNoClip()
     end
 end
 
--- ==================== SPIN BOT ====================
-
-local spinAngle = 0
 local function doSpin()
     if not settings.spinBot or not LocalPlayer.Character then return end
     local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -792,28 +901,120 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- ==================== ЗАПОЛНЯЕМ ВКЛАДКИ ====================
+
+-- ESP вкладка
+local espScroller = tabContents["ESP"]
+local y = 5
+createToggle(espScroller, "ESP", y, "esp"); y = y + 40
+createToggle(espScroller, "Names", y, "names"); y = y + 40
+createToggle(espScroller, "Distance", y, "distance"); y = y + 40
+createToggle(espScroller, "Health", y, "health"); y = y + 40
+createToggle(espScroller, "Wallhack", y, "wallhack"); y = y + 40
+espScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+
+-- AIMBOT вкладка
+local aimScroller = tabContents["AIMBOT"]
+y = 5
+createToggle(aimScroller, "Aimbot", y, "aimbot"); y = y + 40
+createSlider(aimScroller, "FOV", y, 50, 500, "aimFOV", "px"); y = y + 55
+createSlider(aimScroller, "Smooth", y, 1, 20, "aimSmooth", ""); y = y + 55
+createToggle(aimScroller, "Team Check", y, "aimTeamCheck"); y = y + 40
+createToggle(aimScroller, "Wall Check", y, "aimWallCheck"); y = y + 40
+createToggle(aimScroller, "Predict Move", y, "aimPredictMovement"); y = y + 40
+createSlider(aimScroller, "Prediction", y, 0.1, 2, "aimPredictAmount", ""); y = y + 55
+createDropdown(aimScroller, "Target Part", y, {"Head", "HumanoidRootPart", "Torso"}, "aimTargetPart"); y = y + 50
+createDropdown(aimScroller, "Target Type", y, {"Closest", "Lowest HP", "Highest HP", "Lowest Dist"}, "aimTargetType"); y = y + 50
+aimScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+
+-- MOVE вкладка (УБРАЛ HIGH JUMP)
+local moveScroller = tabContents["MOVE"]
+y = 5
+createToggle(moveScroller, "Speed (on ground)", y, "speed"); y = y + 40
+createSlider(moveScroller, "Speed Amount", y, 16, 100, "speedAmount", ""); y = y + 55
+moveScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+
+-- PLAYER вкладка
+local playerScroller = tabContents["PLAYER"]
+y = 5
+createToggle(playerScroller, "GOD MODE (1HP fake)", y, "godMode"); y = y + 40
+createToggle(playerScroller, "NO FALL", y, "noFallDamage"); y = y + 40
+createToggle(playerScroller, "No Jump CD", y, "noJumpCooldown"); y = y + 40
+createToggle(playerScroller, "Infinite Jump", y, "infiniteJump"); y = y + 40
+createToggle(playerScroller, "No Clip", y, "noClip"); y = y + 40
+playerScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+
+-- RENDER вкладка (НОВАЯ)
+local renderScroller = tabContents["RENDER"]
+y = 5
+createToggle(renderScroller, "Remove Grass", y, "removeGrass"); y = y + 40
+createToggle(renderScroller, "Remove Foliage", y, "removeFoliage"); y = y + 40
+createToggle(renderScroller, "Remove Trees", y, "removeTrees"); y = y + 40
+createToggle(renderScroller, "Remove Clouds", y, "removeClouds"); y = y + 40
+createToggle(renderScroller, "Remove Fog", y, "removeFog"); y = y + 40
+createToggle(renderScroller, "Remove Water", y, "removeWater"); y = y + 40
+createToggle(renderScroller, "Remove Sky", y, "removeSky"); y = y + 40
+createToggle(renderScroller, "Remove Clothes", y, "removeClothes"); y = y + 40
+createToggle(renderScroller, "Potato Graphics", y, "potatoGraphics"); y = y + 40
+createToggle(renderScroller, "Full Bright", y, "fullBright"); y = y + 40
+createToggle(renderScroller, "Chinese Hat", y, "chineseHat"); y = y + 40
+createToggle(renderScroller, "Jump Trail", y, "jumpTrail"); y = y + 40
+renderScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+
+-- SPIN вкладка
+local spinScroller = tabContents["SPIN"]
+y = 5
+createToggle(spinScroller, "Spin Bot", y, "spinBot"); y = y + 40
+createSlider(spinScroller, "Speed", y, 1, 30, "spinSpeed", ""); y = y + 55
+createDropdown(spinScroller, "Direction", y, {"Right", "Left", "Random"}, "spinDirection"); y = y + 50
+createDropdown(spinScroller, "Type", y, {"Constant", "Random", "Mouse"}, "spinType"); y = y + 50
+spinScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+
+-- BINDS вкладка
+local bindsScroller = tabContents["BINDS"]
+y = 5
+bindsScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
+
+-- ==================== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ====================
+
+for i, tabName in ipairs(tabs) do
+    tabButtons[tabName].MouseButton1Click:Connect(function()
+        for _, btn in pairs(tabButtons) do
+            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+        end
+        tabButtons[tabName].BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        
+        for _, scroller in pairs(tabContents) do
+            scroller.Visible = false
+        end
+        tabContents[tabName].Visible = true
+    end)
+end
+
 -- ==================== ГЛАВНЫЙ ЦИКЛ ====================
+
+local spinAngle = 0
 
 RunService.Heartbeat:Connect(function()
     doSpeed()
-    doJump()
     doGodMode()
     doNoFallDamage()
     doNoJumpCooldown()
     doInfiniteJump()
     doNoClip()
     doSpin()
+    removeClothes()
+    updateChineseHat()
+    createJumpTrail()
 end)
 
 -- ==================== ОБРАБОТКА КНОПОК ДЛЯ ТЕЛЕФОНА ====================
 
 if isMobile then
-    -- Кнопка меню
     menuButton.MouseButton1Click:Connect(function()
         menu.Visible = not menu.Visible
     end)
     
-    -- Кнопка Aimbot
     aimbotButton.MouseButton1Click:Connect(function()
         settings.aimbot = not settings.aimbot
         aimbotButton.BackgroundColor3 = settings.aimbot and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
@@ -825,7 +1026,6 @@ if isMobile then
         })
     end)
     
-    -- Кнопка ESP
     espButton.MouseButton1Click:Connect(function()
         settings.esp = not settings.esp
         espButton.BackgroundColor3 = settings.esp and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
@@ -839,7 +1039,6 @@ if isMobile then
     end)
     
 else
-    -- Для ПК
     UserInputService.InputBegan:Connect(function(input, gp)
         if gp then return end
         if input.KeyCode == settings.bindMenu then
@@ -866,12 +1065,15 @@ end)
 
 Players.PlayerRemoving:Connect(removeESP)
 
+-- Применяем настройки рендера
+applyRenderSettings()
+
 StarterGui:SetCore("SendNotification", {
-    Title = "rusticlient v9.0",
-    Text = isMobile and "📱 Готов! Кнопки AIM/ESP справа" or "💻 Готов! F1-F7",
+    Title = "rusticlient v10.0",
+    Text = isMobile and "📱 RENDER вкладка добавлена!" or "💻 God Mode переработан!",
     Duration = 4
 })
 
-print("✅ rusticlient v9.0 загружен!")
-print(isMobile and "📱 Режим телефона - кнопки справа" or "💻 Режим ПК")
-print("✨ Все функции восстановлены!")
+print("✅ rusticlient v10.0 загружен!")
+print("✨ God Mode теперь показывает 1HP врагам")
+print("🎨 RENDER вкладка: убери траву, графику картошкой и визуалы")
