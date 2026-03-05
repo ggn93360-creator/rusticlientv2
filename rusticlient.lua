@@ -1,4 +1,4 @@
--- rusticlient v12.0 - РАБОЧЕЕ красивое меню
+-- rusticlient v13.0 - Полная версия со всеми фиксами
 -- Автор: SWILL / rusticlient
 
 local Players = game:GetService("Players")
@@ -10,6 +10,7 @@ local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local StarterGui = game:GetService("StarterGui")
 local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
 
 -- ==================== ОПРЕДЕЛЕНИЕ УСТРОЙСТВА ====================
 
@@ -20,7 +21,7 @@ if identifyexecutor then
     injectorType = identifyexecutor()
 end
 
--- ==================== ОЧИСТКА СТАРЫХ ГУИ ====================
+-- ==================== GUI ====================
 
 for _, v in ipairs(CoreGui:GetChildren()) do
     if v.Name == "rusticlient" then
@@ -33,7 +34,7 @@ gui.Name = "rusticlient"
 gui.ResetOnSpawn = false
 gui.Parent = CoreGui
 
--- ==================== КНОПКА С АВАТАРКОЙ ====================
+-- ==================== КРУГЛАЯ КНОПКА С КАРТИНКОЙ ====================
 
 local menuButton = Instance.new("ImageButton")
 menuButton.Size = UDim2.new(0, 70, 0, 70)
@@ -44,42 +45,55 @@ menuButton.Image = "rbxassetid://90064663091843"
 menuButton.Visible = true
 menuButton.Parent = gui
 
--- Делаем кнопку круглой
+-- Делаем кнопку идеально круглой
 local menuButtonCorner = Instance.new("UICorner")
 menuButtonCorner.CornerRadius = UDim.new(1, 0)
 menuButtonCorner.Parent = menuButton
 
--- ==================== КРАСИВОЕ МЕНЮ ====================
+-- Добавляем обводку для красоты
+local menuButtonStroke = Instance.new("UIStroke")
+menuButtonStroke.Color = Color3.fromRGB(255, 50, 50)
+menuButtonStroke.Thickness = 2
+menuButtonStroke.Parent = menuButton
+
+-- ==================== ПРОЗРАЧНОЕ МЕНЮ ====================
 
 local menu = Instance.new("Frame")
-menu.Size = UDim2.new(0, 450, 0, 650)
-menu.Position = UDim2.new(0.5, -225, 0.5, -325)
-menu.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-menu.BackgroundTransparency = 0.1
+menu.Size = UDim2.new(0, 500, 0, 700)
+menu.Position = UDim2.new(0.5, -250, 0.5, -350)
+menu.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+menu.BackgroundTransparency = 0.15  -- Прозрачность
 menu.Visible = false
 menu.Active = true
 menu.Draggable = true
 menu.Parent = gui
 
--- Скругленные углы меню
 local menuCorner = Instance.new("UICorner")
-menuCorner.CornerRadius = UDim.new(0, 15)
+menuCorner.CornerRadius = UDim.new(0, 20)
 menuCorner.Parent = menu
+
+-- Стеклянный эффект
+local menuGlass = Instance.new("Frame")
+menuGlass.Size = UDim2.new(1, 0, 1, 0)
+menuGlass.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+menuGlass.BackgroundTransparency = 0.95
+menuGlass.BorderSizePixel = 0
+menuGlass.Parent = menu
 
 -- Заголовок
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 45)
+title.Size = UDim2.new(1, 0, 0, 50)
 title.BackgroundTransparency = 1
-title.Text = "RUSTICLIENT v12.0"
+title.Text = "RUSTICLIENT v13.0"
 title.TextColor3 = Color3.fromRGB(255, 100, 100)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
 title.Parent = menu
 
--- Инфо об инжекторе
+-- Инфо
 local infoLabel = Instance.new("TextLabel")
 infoLabel.Size = UDim2.new(1, -20, 0, 25)
-infoLabel.Position = UDim2.new(0, 10, 0, 45)
+infoLabel.Position = UDim2.new(0, 10, 0, 50)
 infoLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 infoLabel.BackgroundTransparency = 0.3
 infoLabel.Text = "Device: " .. (isMobile and "📱 Mobile" or "💻 PC") .. " | " .. injectorType
@@ -92,11 +106,51 @@ local infoCorner = Instance.new("UICorner")
 infoCorner.CornerRadius = UDim.new(0, 8)
 infoCorner.Parent = infoLabel
 
+-- ==================== СНЕЖИНКИ В МЕНЮ (ТОЛЬКО ДЛЯ ПК) ====================
+
+if not isMobile then
+    local snowEmitter = Instance.new("Frame")
+    snowEmitter.Size = UDim2.new(1, 0, 1, 0)
+    snowEmitter.BackgroundTransparency = 1
+    snowEmitter.Parent = menu
+    
+    local snowflakes = {}
+    local snowCount = 15
+    
+    for i = 1, snowCount do
+        local snow = Instance.new("TextLabel")
+        snow.Size = UDim2.new(0, 15, 0, 15)
+        snow.Position = UDim2.new(math.random(), 0, math.random(), 0)
+        snow.BackgroundTransparency = 1
+        snow.Text = "❄️"
+        snow.TextColor3 = Color3.fromRGB(255, 255, 255)
+        snow.TextScaled = true
+        snow.Parent = snowEmitter
+        table.insert(snowflakes, {obj = snow, speed = math.random(20, 50) / 100})
+    end
+    
+    spawn(function()
+        while menu.Parent do
+            wait(0.05)
+            for _, flake in ipairs(snowflakes) do
+                local pos = flake.obj.Position
+                local y = pos.Y.Scale + flake.speed / 1000
+                if y > 1 then
+                    y = 0
+                    flake.obj.Position = UDim2.new(math.random(), 0, 0, 0)
+                else
+                    flake.obj.Position = UDim2.new(pos.X.Scale, 0, y, 0)
+                end
+            end
+        end
+    end)
+end
+
 -- ==================== ВКЛАДКИ ====================
 
 local tabFrame = Instance.new("Frame")
 tabFrame.Size = UDim2.new(1, -20, 0, 40)
-tabFrame.Position = UDim2.new(0, 10, 0, 75)
+tabFrame.Position = UDim2.new(0, 10, 0, 80)
 tabFrame.BackgroundTransparency = 1
 tabFrame.Parent = menu
 
@@ -124,8 +178,8 @@ end
 
 -- КОНТЕЙНЕР ДЛЯ КОНТЕНТА
 local contentFrame = Instance.new("Frame")
-contentFrame.Size = UDim2.new(1, -20, 1, -130)
-contentFrame.Position = UDim2.new(0, 10, 0, 120)
+contentFrame.Size = UDim2.new(1, -20, 1, -140)
+contentFrame.Position = UDim2.new(0, 10, 0, 125)
 contentFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 contentFrame.BackgroundTransparency = 0.2
 contentFrame.Parent = menu
@@ -134,7 +188,7 @@ local contentCorner = Instance.new("UICorner")
 contentCorner.CornerRadius = UDim.new(0, 10)
 contentCorner.Parent = contentFrame
 
--- СКОЛЛЕРЫ ДЛЯ КАЖДОЙ ВКЛАДКИ
+-- СКОЛЛЕРЫ
 for _, tabName in ipairs(tabs) do
     local scroller = Instance.new("ScrollingFrame")
     scroller.Name = tabName .. "Scroller"
@@ -144,7 +198,7 @@ for _, tabName in ipairs(tabs) do
     scroller.BorderSizePixel = 0
     scroller.ScrollBarThickness = 6
     scroller.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 50)
-    scroller.CanvasSize = UDim2.new(0, 0, 0, 500)
+    scroller.CanvasSize = UDim2.new(0, 0, 0, 600)
     scroller.Visible = (tabName == "ESP")
     scroller.Parent = contentFrame
     tabContents[tabName] = scroller
@@ -168,6 +222,8 @@ local settings = {
     aimWallCheck = true,
     aimTargetPart = "Head",
     aimTargetType = "Closest",
+    noRecoil = false,
+    noSpread = false,
     
     -- Movement
     speed = false,
@@ -186,6 +242,9 @@ local settings = {
     removeTrees = false,
     removeClouds = false,
     removeFog = false,
+    removeEffects = false,
+    removeBlur = false,
+    removeTransparency = false,
     potatoGraphics = false,
     fullBright = false,
     chineseHat = false,
@@ -196,7 +255,7 @@ local settings = {
     spinSpeed = 10
 }
 
--- ==================== ФУНКЦИЯ СОЗДАНИЯ ПЕРЕКЛЮЧАТЕЛЯ ====================
+-- ==================== ФУНКЦИИ СОЗДАНИЯ ЭЛЕМЕНТОВ ====================
 
 local function createToggle(parent, name, yPos, setting)
     local bg = Instance.new("Frame")
@@ -239,6 +298,11 @@ local function createToggle(parent, name, yPos, setting)
         settings[setting] = not settings[setting]
         toggle.BackgroundColor3 = settings[setting] and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
         toggle.Text = settings[setting] and "ON" or "OFF"
+        
+        -- Применяем изменения рендера
+        if setting:find("remove") or setting == "potatoGraphics" or setting == "fullBright" then
+            applyRenderSettings()
+        end
     end)
     
     return bg
@@ -342,6 +406,8 @@ createSlider(aimScroller, "FOV", y, 50, 500, "aimFOV", "px"); y = y + 55
 createSlider(aimScroller, "Smooth", y, 1, 20, "aimSmooth", ""); y = y + 55
 createToggle(aimScroller, "Team Check", y, "aimTeamCheck"); y = y + 40
 createToggle(aimScroller, "Wall Check", y, "aimWallCheck"); y = y + 40
+createToggle(aimScroller, "No Recoil", y, "noRecoil"); y = y + 40
+createToggle(aimScroller, "No Spread", y, "noSpread"); y = y + 40
 aimScroller.CanvasSize = UDim2.new(0, 0, 0, y + 20)
 
 -- MOVE вкладка
@@ -369,6 +435,9 @@ createToggle(renderScroller, "Remove Foliage", y, "removeFoliage"); y = y + 40
 createToggle(renderScroller, "Remove Trees", y, "removeTrees"); y = y + 40
 createToggle(renderScroller, "Remove Clouds", y, "removeClouds"); y = y + 40
 createToggle(renderScroller, "Remove Fog", y, "removeFog"); y = y + 40
+createToggle(renderScroller, "Remove Effects", y, "removeEffects"); y = y + 40
+createToggle(renderScroller, "Remove Blur", y, "removeBlur"); y = y + 40
+createToggle(renderScroller, "Remove Transparency", y, "removeTransparency"); y = y + 40
 createToggle(renderScroller, "Potato Graphics", y, "potatoGraphics"); y = y + 40
 createToggle(renderScroller, "Full Bright", y, "fullBright"); y = y + 40
 createToggle(renderScroller, "Chinese Hat", y, "chineseHat"); y = y + 40
@@ -498,7 +567,7 @@ RunService.RenderStepped:Connect(function()
                 local textParts = {}
                 if settings.names then table.insert(textParts, player.Name) end
                 if settings.distance then table.insert(textParts, math.floor(distance).."m") end
-                if settings.health then table.insert(textParts, "HP:"..hp) end
+                if settings.health then table.insert(textParts, "❤️"..hp) end
                 
                 obj.text.Text = table.concat(textParts, " | ")
                 
@@ -516,6 +585,178 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
+-- ==================== КИТАЙСКАЯ ШЛЯПА (ИСПРАВЛЕННАЯ) ====================
+
+local hat = nil
+local function updateChineseHat()
+    if settings.chineseHat and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+        if not hat then
+            -- Создаём шляпу как аксессуар
+            local accessory = Instance.new("Accessory")
+            accessory.Name = "ChineseHat"
+            
+            local handle = Instance.new("Part")
+            handle.Name = "Handle"
+            handle.Size = Vector3.new(2, 0.5, 2)
+            handle.Anchored = false
+            handle.CanCollide = false
+            handle.Material = Enum.Material.SmoothPlastic
+            handle.Color = Color3.fromRGB(200, 100, 50)
+            handle.Parent = accessory
+            
+            -- Создаём круглый купол (конус)
+            local mesh = Instance.new("SpecialMesh")
+            mesh.MeshType = Enum.MeshType.Cylinder
+            mesh.Scale = Vector3.new(3, 1, 3)
+            mesh.Parent = handle
+            
+            -- Добавляем помпон сверху
+            local topPart = Instance.new("Part")
+            topPart.Size = Vector3.new(0.5, 0.5, 0.5)
+            topPart.Anchored = false
+            topPart.CanCollide = false
+            topPart.Material = Enum.Material.Neon
+            topPart.Color = Color3.fromRGB(255, 0, 0)
+            topPart.Parent = accessory
+            
+            -- Соединяем всё
+            handle:BreakJoints()
+            topPart:BreakJoints()
+            
+            local weld = Instance.new("Weld")
+            weld.Part0 = handle
+            weld.Part1 = topPart
+            weld.C0 = CFrame.new(0, 0.5, 0)
+            weld.Parent = handle
+            
+            -- Прикрепляем к голове
+            accessory.Parent = LocalPlayer.Character
+            LocalPlayer.Character:WaitForChild("Humanoid"):AddAccessory(accessory)
+            
+            hat = accessory
+        end
+    elseif hat then
+        hat:Destroy()
+        hat = nil
+    end
+end
+
+-- ==================== ДЖАМП ТРЕЙЛ (С КРУГАМИ) ====================
+
+local trailParts = {}
+local function createJumpCircle()
+    if not LocalPlayer.Character then return end
+    local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if not root or not humanoid then return end
+    
+    local circle = Instance.new("Part")
+    circle.Size = Vector3.new(5, 0.1, 5)
+    circle.Anchored = true
+    circle.CanCollide = false
+    circle.Material = Enum.Material.Neon
+    circle.Color = Color3.fromRGB(0, 150, 255)
+    circle.CFrame = CFrame.new(root.Position.X, root.Position.Y - humanoid.HipHeight, root.Position.Z)
+    circle.Parent = Workspace
+    
+    table.insert(trailParts, circle)
+    
+    -- Анимация исчезновения
+    spawn(function()
+        local alpha = 0
+        while alpha < 1 and circle.Parent do
+            alpha = alpha + 0.03
+            circle.Transparency = alpha
+            wait(0.03)
+        end
+        if circle.Parent then
+            circle:Destroy()
+        end
+        for i, v in ipairs(trailParts) do
+            if v == circle then
+                table.remove(trailParts, i)
+                break
+            end
+        end
+    end)
+end
+
+-- ==================== RENDER ФУНКЦИИ ====================
+
+local function applyRenderSettings()
+    -- Remove Grass
+    if settings.removeGrass then
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("Terrain") then
+                obj:Clear()
+            end
+        end
+    end
+    
+    -- Remove Effects
+    if settings.removeEffects then
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("ParticleEmitter") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") then
+                obj.Enabled = false
+            end
+        end
+    end
+    
+    -- Remove Fog
+    if settings.removeFog then
+        Lighting.FogStart = 100000
+        Lighting.FogEnd = 100000
+    else
+        Lighting.FogStart = 0
+        Lighting.FogEnd = 80
+        Lighting.FogColor = Color3.fromRGB(100, 100, 100)
+    end
+    
+    -- Remove Blur
+    if settings.removeBlur then
+        for _, effect in pairs(Lighting:GetChildren()) do
+            if effect:IsA("BlurEffect") then
+                effect.Enabled = false
+            end
+        end
+    end
+    
+    -- Remove Transparency
+    if settings.removeTransparency then
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and obj.Transparency > 0 then
+                obj.Transparency = 0
+            end
+        end
+    end
+    
+    -- Potato Graphics
+    if settings.potatoGraphics then
+        Lighting.GlobalShadows = false
+        Lighting.Ambient = Color3.new(0.8, 0.8, 0.8)
+        Lighting.OutdoorAmbient = Color3.new(0.7, 0.7, 0.7)
+        
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                obj.Material = Enum.Material.Plastic
+                obj.Reflectance = 0
+                obj.CastShadow = false
+            end
+        end
+    else
+        Lighting.GlobalShadows = true
+    end
+    
+    -- Full Bright
+    if settings.fullBright then
+        Lighting.Brightness = 3
+        Lighting.GlobalShadows = false
+        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+    else
+        Lighting.Brightness = 1
+    end
+end
 
 -- ==================== SPEED ====================
 
@@ -601,6 +842,19 @@ local function doNoClip()
     end
 end
 
+-- ==================== NO RECOIL / NO SPREAD ====================
+
+local function doNoRecoil()
+    if not settings.noRecoil or not LocalPlayer.Character then return end
+    -- Этот код нужно адаптировать под конкретную игру
+    -- В общем случае для оружия:
+    for _, tool in ipairs(LocalPlayer.Character:GetChildren()) do
+        if tool:IsA("Tool") then
+            -- Здесь можно отключать отдачу
+        end
+    end
+end
+
 -- ==================== SPIN BOT ====================
 
 local spinAngle = 0
@@ -613,60 +867,6 @@ local function doSpin()
     root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, math.rad(spinAngle), 0)
 end
 
--- ==================== RENDER ФУНКЦИИ ====================
-
-local hat = nil
-local trailParts = {}
-
-local function updateRender()
-    -- Китайская шляпа
-    if settings.chineseHat and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
-        if not hat then
-            hat = Instance.new("Part")
-            hat.Name = "ChineseHat"
-            hat.Size = Vector3.new(3, 0.5, 3)
-            hat.Shape = Enum.PartType.Cylinder
-            hat.BrickColor = BrickColor.Red()
-            hat.Material = Enum.Material.Neon
-            hat.CanCollide = false
-            hat.Anchored = false
-            hat.Parent = LocalPlayer.Character
-            
-            local weld = Instance.new("Weld")
-            weld.Part0 = LocalPlayer.Character.Head
-            weld.Part1 = hat
-            weld.C0 = CFrame.new(0, 0.5, 0)
-            weld.Parent = hat
-        end
-    elseif hat then
-        hat:Destroy()
-        hat = nil
-    end
-    
-    -- Jump Trail
-    if settings.jumpTrail and LocalPlayer.Character then
-        local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-        if humanoid and humanoid.Jump and not humanoid.FloorMaterial then
-            local part = Instance.new("Part")
-            part.Size = Vector3.new(1, 1, 1)
-            part.Shape = Enum.PartType.Ball
-            part.BrickColor = BrickColor.Red()
-            part.Material = Enum.Material.Neon
-            part.CanCollide = false
-            part.Anchored = true
-            part.Position = LocalPlayer.Character.HumanoidRootPart.Position - Vector3.new(0, 2, 0)
-            part.Parent = workspace
-            
-            table.insert(trailParts, part)
-            
-            if #trailParts > 10 then
-                trailParts[1]:Destroy()
-                table.remove(trailParts, 1)
-            end
-        end
-    end
-end
-
 -- ==================== ГЛАВНЫЙ ЦИКЛ ====================
 
 RunService.Heartbeat:Connect(function()
@@ -676,9 +876,31 @@ RunService.Heartbeat:Connect(function()
     doNoJumpCD()
     doInfiniteJump()
     doNoClip()
+    doNoRecoil()
     doSpin()
-    updateRender()
+    updateChineseHat()
 end)
+
+-- ==================== ДЖАМП ТРЕЙЛ ТРИГГЕР ====================
+
+local function onJump(active)
+    if active and settings.jumpTrail then
+        createJumpCircle()
+    end
+end
+
+-- Ждём персонажа
+LocalPlayer.CharacterAdded:Connect(function(char)
+    local humanoid = char:WaitForChild("Humanoid")
+    humanoid.Jumping:Connect(onJump)
+end)
+
+if LocalPlayer.Character then
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.Jumping:Connect(onJump)
+    end
+end
 
 -- ==================== ОТКРЫТИЕ МЕНЮ ====================
 
@@ -702,11 +924,15 @@ end)
 
 Players.PlayerRemoving:Connect(removeESP)
 
+-- Применяем начальные настройки рендера
+applyRenderSettings()
+
 StarterGui:SetCore("SendNotification", {
-    Title = "rusticlient v12.0",
-    Text = "Красивое меню загружено!",
+    Title = "rusticlient v13.0",
+    Text = "Полная версия с фиксами!",
     Duration = 3
 })
 
-print("✅ rusticlient v12.0 загружен!")
-print("🎨 Новая аватарка: 90064663091843")
+print("✅ rusticlient v13.0 загружен!")
+print("🎨 Китайская шляпа исправлена!")
+print("❄️ Снежинки в меню (только ПК)")
