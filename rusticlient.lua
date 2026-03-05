@@ -739,90 +739,87 @@ end)
 
 -- ==================== КИТАЙСКАЯ ШЛЯПА ====================
 
-local hat = nil
-local function updateChineseHat()
-    if settings.chineseHat and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
-        if not hat then
-            local accessory = Instance.new("Accessory")
-            accessory.Name = "ChineseHat"
-            
-            local handle = Instance.new("Part")
-            handle.Name = "Handle"
-            handle.Size = Vector3.new(2, 0.5, 2)
-            handle.Anchored = false
-            handle.CanCollide = false
-            handle.Material = Enum.Material.SmoothPlastic
-            handle.Color = Color3.fromRGB(200, 100, 50)
-            handle.Parent = accessory
-            
-            local mesh = Instance.new("SpecialMesh")
-            mesh.MeshType = Enum.MeshType.Cylinder
-            mesh.Scale = Vector3.new(3, 1, 3)
-            mesh.Parent = handle
-            
-            local topPart = Instance.new("Part")
-            topPart.Size = Vector3.new(0.5, 0.5, 0.5)
-            topPart.Anchored = false
-            topPart.CanCollide = false
-            topPart.Material = Enum.Material.Neon
-            topPart.Color = Color3.fromRGB(255, 0, 0)
-            topPart.Parent = accessory
-            
-            local weld = Instance.new("Weld")
-            weld.Part0 = handle
-            weld.Part1 = topPart
-            weld.C0 = CFrame.new(0, 0.5, 0)
-            weld.Parent = handle
-            
-            accessory.Parent = LocalPlayer.Character
-            LocalPlayer.Character:WaitForChild("Humanoid"):AddAccessory(accessory)
-            
-            hat = accessory
-        end
-    elseif hat then
-        hat:Destroy()
-        hat = nil
-    end
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local function createHat(character)
+
+	local head = character:WaitForChild("Head")
+
+	local hat = Instance.new("Part")
+	hat.Size = Vector3.new(4,0.5,4)
+	hat.Shape = Enum.PartType.Cylinder
+	hat.Color = Color3.fromRGB(200,120,50)
+	hat.Material = Enum.Material.SmoothPlastic
+	hat.CanCollide = false
+
+	local weld = Instance.new("WeldConstraint")
+
+	hat.CFrame = head.CFrame * CFrame.new(0,1,0) * CFrame.Angles(0,0,math.rad(90))
+
+	hat.Parent = character
+	weld.Part0 = hat
+	weld.Part1 = head
+	weld.Parent = hat
+
 end
 
+player.CharacterAdded:Connect(createHat)
+
+if player.Character then
+	createHat(player.Character)
+end
 -- ==================== ДЖАМП ТРЕЙЛ ====================
 
-local trailParts = {}
-local function createJumpCircle()
-    if not LocalPlayer.Character then return end
-    local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-    if not root or not humanoid then return end
-    
-    local circle = Instance.new("Part")
-    circle.Size = Vector3.new(5, 0.1, 5)
-    circle.Anchored = true
-    circle.CanCollide = false
-    circle.Material = Enum.Material.Neon
-    circle.Color = Color3.fromRGB(0, 150, 255)
-    circle.CFrame = CFrame.new(root.Position.X, root.Position.Y - humanoid.HipHeight, root.Position.Z)
-    circle.Parent = Workspace
-    
-    table.insert(trailParts, circle)
-    
-    spawn(function()
-        local alpha = 0
-        while alpha < 1 and circle.Parent do
-            alpha = alpha + 0.03
-            circle.Transparency = alpha
-            wait(0.03)
-        end
-        if circle.Parent then
-            circle:Destroy()
-        end
-        for i, v in ipairs(trailParts) do
-            if v == circle then
-                table.remove(trailParts, i)
-                break
-            end
-        end
-    end)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
+local root = char:WaitForChild("HumanoidRootPart")
+
+local function createCircle()
+
+	local part = Instance.new("Part")
+	part.Anchored = true
+	part.CanCollide = false
+	part.Size = Vector3.new(6,0.2,6)
+	part.Material = Enum.Material.Neon
+	part.Color = Color3.fromRGB(0,170,255)
+	part.CFrame = CFrame.new(root.Position.X, root.Position.Y - 3, root.Position.Z)
+	part.Parent = workspace
+
+	local gui = Instance.new("BillboardGui")
+	gui.Size = UDim2.new(0,200,0,50)
+	gui.StudsOffset = Vector3.new(0,1,0)
+	gui.AlwaysOnTop = true
+	gui.Parent = part
+
+	local text = Instance.new("TextLabel")
+	text.Size = UDim2.new(1,0,1,0)
+	text.BackgroundTransparency = 1
+	text.TextScaled = true
+	text.Font = Enum.Font.SourceSansBold
+	text.TextColor3 = Color3.new(1,1,1)
+	text.Text = "RusticClient BustIt"
+	text.Parent = gui
+
+	task.spawn(function()
+		for i=0,1,0.03 do
+			part.Transparency = i
+			RunService.RenderStepped:Wait()
+		end
+		part:Destroy()
+	end)
+
 end
+
+humanoid.Jumping:Connect(function(active)
+	if active then
+		createCircle()
+	end
+end)
 
 -- ==================== RENDER ФУНКЦИИ ====================
 
