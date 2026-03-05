@@ -737,90 +737,91 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ==================== КИТАЙСКАЯ ШЛЯПА ====================
+-- ==================== CHINESE HAT ====================
 
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+local hat
 
-local function createHat(character)
+RunService.RenderStepped:Connect(function()
 
-	local head = character:WaitForChild("Head")
+    if settings.chineseHat then
 
-	local hat = Instance.new("Part")
-	hat.Size = Vector3.new(4,0.5,4)
-	hat.Shape = Enum.PartType.Cylinder
-	hat.Color = Color3.fromRGB(200,120,50)
-	hat.Material = Enum.Material.SmoothPlastic
-	hat.CanCollide = false
+        local char = LocalPlayer.Character
+        if not char then return end
 
-	local weld = Instance.new("WeldConstraint")
+        local head = char:FindFirstChild("Head")
+        if not head then return end
 
-	hat.CFrame = head.CFrame * CFrame.new(0,1,0) * CFrame.Angles(0,0,math.rad(90))
+        if not hat then
+            hat = Instance.new("Part")
+            hat.Name = "RusticHat"
+            hat.Shape = Enum.PartType.Cylinder
+            hat.Size = Vector3.new(6,0.4,6)
+            hat.Color = Color3.fromRGB(255, 170, 0)
+            hat.Material = Enum.Material.Neon
+            hat.CanCollide = false
+            hat.Anchored = true
+            hat.Parent = workspace
+        end
 
-	hat.Parent = character
-	weld.Part0 = hat
-	weld.Part1 = head
-	weld.Parent = hat
+        hat.CFrame =
+            head.CFrame *
+            CFrame.new(0,0.8,0) *
+            CFrame.Angles(0,0,math.rad(90))
 
-end
+    else
 
-player.CharacterAdded:Connect(createHat)
+        if hat then
+            hat:Destroy()
+            hat = nil
+        end
 
-if player.Character then
-	createHat(player.Character)
-end
--- ==================== ДЖАМП ТРЕЙЛ ====================
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
-local humanoid = char:WaitForChild("Humanoid")
-local root = char:WaitForChild("HumanoidRootPart")
-
-local function createCircle()
-
-	local part = Instance.new("Part")
-	part.Anchored = true
-	part.CanCollide = false
-	part.Size = Vector3.new(6,0.2,6)
-	part.Material = Enum.Material.Neon
-	part.Color = Color3.fromRGB(0,170,255)
-	part.CFrame = CFrame.new(root.Position.X, root.Position.Y - 3, root.Position.Z)
-	part.Parent = workspace
-
-	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.new(0,200,0,50)
-	gui.StudsOffset = Vector3.new(0,1,0)
-	gui.AlwaysOnTop = true
-	gui.Parent = part
-
-	local text = Instance.new("TextLabel")
-	text.Size = UDim2.new(1,0,1,0)
-	text.BackgroundTransparency = 1
-	text.TextScaled = true
-	text.Font = Enum.Font.SourceSansBold
-	text.TextColor3 = Color3.new(1,1,1)
-	text.Text = "RusticClient BustIt"
-	text.Parent = gui
-
-	task.spawn(function()
-		for i=0,1,0.03 do
-			part.Transparency = i
-			RunService.RenderStepped:Wait()
-		end
-		part:Destroy()
-	end)
-
-end
-
-humanoid.Jumping:Connect(function(active)
-	if active then
-		createCircle()
-	end
+    end
 end)
+-- ==================== JUMP CIRCLE ====================
 
+local jumpCircle
+
+RunService.RenderStepped:Connect(function()
+
+    if not settings.jumpTrail then return end
+
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    if not jumpCircle then
+        jumpCircle = Instance.new("Part")
+        jumpCircle.Shape = Enum.PartType.Cylinder
+        jumpCircle.Size = Vector3.new(6,0.1,6)
+        jumpCircle.Material = Enum.Material.Neon
+        jumpCircle.Color = Color3.fromRGB(255,50,50)
+        jumpCircle.CanCollide = false
+        jumpCircle.Anchored = true
+        jumpCircle.Parent = workspace
+
+        local text = Instance.new("BillboardGui")
+        text.Size = UDim2.new(0,200,0,50)
+        text.AlwaysOnTop = true
+        text.Parent = jumpCircle
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1,0,1,0)
+        label.BackgroundTransparency = 1
+        label.Text = "rusticlient"
+        label.TextScaled = true
+        label.TextColor3 = Color3.fromRGB(255,50,50)
+        label.Font = Enum.Font.GothamBold
+        label.Parent = text
+    end
+
+    jumpCircle.CFrame =
+        root.CFrame *
+        CFrame.new(0,-3,0) *
+        CFrame.Angles(0,0,math.rad(90))
+
+end)
 -- ==================== RENDER ФУНКЦИИ ====================
 
 local function applyRenderSettings()
